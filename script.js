@@ -22,7 +22,7 @@ function previewImage(input, previewId) {
     }
 }
 
-// NOVA FUNÇÃO: Preview de Mídia para Avisos (Foto ou Vídeo)
+// Preview de Mídia para Avisos (Foto ou Vídeo)
 function previewAvisoMidia(input) {
     const container = document.getElementById('preview-midia-container');
     container.innerHTML = "";
@@ -52,6 +52,7 @@ function showScreen(screenId) {
     if(screenId === 'admin-dashboard') {
         atualizarListaPessoas();
         carregarConfiguracoesADM();
+        atualizarQuadroAvisosADM(); // Carrega os avisos com botão de excluir no ADM
     }
 }
 
@@ -264,7 +265,7 @@ function switchMemberTab(tab) {
     if(targetBtn) targetBtn.classList.add('active');
 }
 
-// --- AVISOS (ATUALIZADO COM MÍDIA) ---
+// --- AVISOS (COM EXCLUSÃO) ---
 function enviarAviso() {
     const inputAviso = document.getElementById('texto-aviso');
     if(!inputAviso) return;
@@ -281,14 +282,39 @@ function enviarAviso() {
     avisosGerais.unshift(novoAviso);
     localStorage.setItem('avisosIgreja', JSON.stringify(avisosGerais));
     
-    // Limpar campos
     inputAviso.value = "";
     midiaAvisoBase64 = "";
     const previewContainer = document.getElementById('preview-midia-container');
     if(previewContainer) previewContainer.innerHTML = "";
     
     alert("Aviso publicado!");
-    atualizarQuadroAvisos();
+    atualizarQuadroAvisosADM(); // Atualiza a lista no ADM
+    atualizarQuadroAvisos();    // Atualiza a visualização do membro
+}
+
+// Função para o ADM gerenciar avisos (com botão excluir)
+function atualizarQuadroAvisosADM() {
+    const container = document.getElementById('lista-avisos-adm'); // Certifique-se de ter essa ID no seu HTML do ADM
+    if(!container) return;
+    
+    container.innerHTML = avisosGerais.map((aviso, index) => `
+        <div style="border-bottom: 1px solid #ddd; padding: 10px; margin-bottom: 10px; background: #fff; border-radius: 5px;">
+            <div style="display: flex; justify-content: space-between;">
+                <small style="color: #888;">${aviso.data}</small>
+                <button onclick="excluirAviso(${index})" style="background: #ff4444; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer;">Excluir</button>
+            </div>
+            <p style="margin: 5px 0;">${aviso.texto}</p>
+        </div>
+    `).join('');
+}
+
+function excluirAviso(index) {
+    if(confirm("Deseja apagar esta publicação?")) {
+        avisosGerais.splice(index, 1);
+        localStorage.setItem('avisosIgreja', JSON.stringify(avisosGerais));
+        atualizarQuadroAvisosADM();
+        atualizarQuadroAvisos();
+    }
 }
 
 function atualizarQuadroAvisos() {
