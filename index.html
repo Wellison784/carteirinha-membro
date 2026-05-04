@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +11,7 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#004a99">
 </head>
+
 <body>
     <div id="app">
         <!-- Tela Inicial -->
@@ -38,10 +40,11 @@
                 <!-- Envolvido em FORM para suporte a gerenciadores de senha -->
                 <form onsubmit="loginMembro(); return false;">
                     <input type="email" id="member-email" placeholder="Seu E-mail" required autocomplete="username">
-                    <input type="password" id="member-pass" placeholder="Sua Senha" required autocomplete="current-password">
+                    <input type="password" id="member-pass" placeholder="Sua Senha" required
+                        autocomplete="current-password">
                     <button type="submit" class="btn btn-member">ENTRAR</button>
                 </form>
-                <p style="text-align:center; margin-top:15px;">Não tem conta? 
+                <p style="text-align:center; margin-top:15px;">Não tem conta?
                     <a href="#" onclick="showScreen('register-screen')">Cadastre-se</a>
                 </p>
             </div>
@@ -60,16 +63,18 @@
                     <div class="photo-upload">
                         <div id="reg-avatar-preview" class="avatar-circle"></div>
                         <label for="foto" class="btn-photo">Selecionar Minha Foto</label>
-                        <input type="file" id="foto" accept="image/*" onchange="previewImage(this, 'reg-avatar-preview')" style="display:none;">
+                        <input type="file" id="foto" accept="image/*"
+                            onchange="previewImage(this, 'reg-avatar-preview')" style="display:none;">
                     </div>
                     <input type="text" id="reg-nome" placeholder="Nome" required autocomplete="given-name">
                     <input type="text" id="reg-sobrenome" placeholder="Sobrenome" required autocomplete="family-name">
                     <!-- Autocomplete para nova senha -->
-                    <input type="password" id="reg-pass" placeholder="Crie uma Senha" required autocomplete="new-password">
-                    
+                    <input type="password" id="reg-pass" placeholder="Crie uma Senha" required
+                        autocomplete="new-password">
+
                     <label>Data de nascimento</label>
-                    <input type="date" id="reg-nascimento" required>
-                    
+                    <input type="date" id="reg-nascimento" required min="1900-01-01" max="2026-12-31">
+
                     <div class="radio-group" style="margin-top: 10px;">
                         <label><input type="radio" name="sexo" value="M" checked> Masculino</label>
                         <label><input type="radio" name="sexo" value="F"> Feminino</label>
@@ -88,15 +93,19 @@
                         <option value="Cooperador">Cooperador(a)</option>
                         <option value="Membro">Membro</option>
                     </select>
-                    
+
                     <label style="display:block; margin-top:10px;">Batizado?</label>
                     <div class="radio-group">
-                        <label><input type="radio" name="batismo" value="Sim" onclick="document.getElementById('data-batismo-box').classList.remove('hidden')"> Sim</label>
-                        <label><input type="radio" name="batismo" value="Não" checked onclick="document.getElementById('data-batismo-box').classList.add('hidden')"> Não</label>
+                        <label><input type="radio" name="batismo" value="Sim"
+                                onclick="document.getElementById('data-batismo-box').classList.remove('hidden')">
+                            Sim</label>
+                        <label><input type="radio" name="batismo" value="Não" checked
+                                onclick="document.getElementById('data-batismo-box').classList.add('hidden')">
+                            Não</label>
                     </div>
                     <div id="data-batismo-box" class="hidden">
                         <label>Data de batismo</label>
-                        <input type="date" id="reg-data-batismo">
+                        <input type="date" id="reg-data-batismo" min="1950-01-01" max="2026-12-31">
                     </div>
                 </div>
 
@@ -151,6 +160,15 @@
                 <div id="tab-avisos" class="tab-content hidden">
                     <div class="card">
                         <textarea id="texto-aviso" placeholder="Escreva um comunicado para a igreja..."></textarea>
+
+                        <div class="media-upload" style="margin: 10px 0;">
+                            <label for="aviso-midia" class="btn-photo" style="background-color: #666;">Adicionar Foto ou
+                                Vídeo</label>
+                            <input type="file" id="aviso-midia" accept="image/*,video/*" style="display:none;"
+                                onchange="previewAvisoMidia(this)">
+                            <div id="preview-midia-container" style="margin-top:10px;"></div>
+                        </div>
+
                         <button class="btn btn-save" onclick="enviarAviso()">PUBLICAR AVISO</button>
                     </div>
                 </div>
@@ -194,7 +212,8 @@
                             <div class="info-membro">
                                 <p><strong>NOME:</strong> <span id="card-nome">---</span></p>
                                 <p><strong>CARGO:</strong> <span id="card-cargo">---</span></p>
-                                <p><strong>MEMBRO:</strong> <span style="color: #2ecc71; font-weight: bold;">ATIVO</span></p>
+                                <p><strong>MEMBRO:</strong> <span
+                                        style="color: #2ecc71; font-weight: bold;">ATIVO</span></p>
                             </div>
                         </div>
                     </div>
@@ -211,7 +230,8 @@
                             <div class="photo-upload">
                                 <div id="edit-avatar-preview" class="avatar-circle"></div>
                                 <label for="edit-foto" class="btn-photo">Trocar Foto</label>
-                                <input type="file" id="edit-foto" onchange="previewImage(this, 'edit-avatar-preview')" style="display:none;">
+                                <input type="file" id="edit-foto" onchange="previewImage(this, 'edit-avatar-preview')"
+                                    style="display:none;">
                             </div>
                             <input type="text" id="edit-nome" placeholder="Nome" autocomplete="name">
                             <input type="tel" id="edit-tel" placeholder="Telefone" autocomplete="tel">
@@ -244,4 +264,5 @@
     </div>
     <script src="script.js"></script>
 </body>
+
 </html>

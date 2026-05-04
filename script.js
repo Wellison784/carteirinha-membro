@@ -3,6 +3,7 @@ let membrosAprovados = JSON.parse(localStorage.getItem('membrosIgreja')) || [];
 let avisosGerais = JSON.parse(localStorage.getItem('avisosIgreja')) || [];
 let configsIgreja = JSON.parse(localStorage.getItem('configsIgreja')) || { grupos: "", depto: "" };
 let usuarioLogado = null;
+let midiaAvisoBase64 = ""; // Variável temporária para armazenar a mídia do aviso
 
 // --- FUNÇÕES DE IMAGEM ---
 function previewImage(input, previewId) {
@@ -17,6 +18,28 @@ function previewImage(input, previewId) {
             preview.style.backgroundPosition = 'center';
             preview.innerHTML = ''; // Limpa o texto "Foto"
         }
+        reader.readAsDataURL(file);
+    }
+}
+
+// NOVA FUNÇÃO: Preview de Mídia para Avisos (Foto ou Vídeo)
+function previewAvisoMidia(input) {
+    const container = document.getElementById('preview-midia-container');
+    container.innerHTML = "";
+    midiaAvisoBase64 = "";
+
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        const file = input.files[0];
+
+        reader.onload = function(e) {
+            midiaAvisoBase64 = e.target.result;
+            if (file.type.includes('image')) {
+                container.innerHTML = `<img src="${midiaAvisoBase64}" style="width:100%; border-radius:8px; margin-top:10px;">`;
+            } else if (file.type.includes('video')) {
+                container.innerHTML = `<video src="${midiaAvisoBase64}" controls style="width:100%; border-radius:8px; margin-top:10px;"></video>`;
+            }
+        };
         reader.readAsDataURL(file);
     }
 }
@@ -36,7 +59,6 @@ function showScreen(screenId) {
 function checkAdmin() {
     const email = document.getElementById('admin-email').value;
     const pass = document.getElementById('admin-pass').value;
-    // Credenciais conforme solicitado anteriormente
     if(email === "wellison20111@gmail.com" && pass === "291220") {
         showScreen('admin-dashboard');
     } else {
@@ -93,7 +115,6 @@ function solicitarAprovacao(dados) {
     novoItem.className = 'member-card';
     novoItem.style = "background: #f0f0f0; padding: 10px; margin-bottom: 5px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;";
     
-    // Preparar os dados para o clique do botão evitando problemas com aspas
     const dadosString = JSON.stringify(dados).replace(/"/g, '&quot;');
 
     novoItem.innerHTML = `
@@ -174,7 +195,6 @@ function preencherDadosMembro() {
     document.getElementById('card-nome').innerText = `${usuarioLogado.nome} ${usuarioLogado.sobrenome || ""}`;
     document.getElementById('card-cargo').innerText = usuarioLogado.cargo;
     
-    // Foto na carteirinha
     const cardFoto = document.getElementById('card-foto-display');
     if(usuarioLogado.foto && cardFoto) {
         cardFoto.style.backgroundImage = usuarioLogado.foto;
@@ -182,7 +202,6 @@ function preencherDadosMembro() {
         cardFoto.style.backgroundPosition = 'center';
     }
 
-    // Dados na aba edição
     const editNome = document.getElementById('edit-nome');
     const editTel = document.getElementById('edit-tel');
     const editPass = document.getElementById('edit-pass');
@@ -191,7 +210,6 @@ function preencherDadosMembro() {
     if(editTel) editTel.value = usuarioLogado.telefone || "";
     if(editPass) editPass.value = usuarioLogado.senha;
     
-    // Preview da foto na aba edição
     const editPreview = document.getElementById('edit-avatar-preview');
     if(usuarioLogado.foto && editPreview) {
         editPreview.style.backgroundImage = usuarioLogado.foto;
@@ -246,18 +264,29 @@ function switchMemberTab(tab) {
     if(targetBtn) targetBtn.classList.add('active');
 }
 
-// --- AVISOS ---
+// --- AVISOS (ATUALIZADO COM MÍDIA) ---
 function enviarAviso() {
     const inputAviso = document.getElementById('texto-aviso');
     if(!inputAviso) return;
     
     const texto = inputAviso.value;
-    if(texto.trim() === "") return alert("Digite um aviso!");
+    if(texto.trim() === "" && midiaAvisoBase64 === "") return alert("Digite um aviso ou adicione uma mídia!");
     
-    const novoAviso = { texto, data: new Date().toLocaleDateString('pt-BR') };
+    const novoAviso = { 
+        texto: texto, 
+        midia: midiaAvisoBase64,
+        data: new Date().toLocaleString('pt-BR') 
+    };
+
     avisosGerais.unshift(novoAviso);
     localStorage.setItem('avisosIgreja', JSON.stringify(avisosGerais));
+    
+    // Limpar campos
     inputAviso.value = "";
+    midiaAvisoBase64 = "";
+    const previewContainer = document.getElementById('preview-midia-container');
+    if(previewContainer) previewContainer.innerHTML = "";
+    
     alert("Aviso publicado!");
     atualizarQuadroAvisos();
 }
@@ -271,12 +300,24 @@ function atualizarQuadroAvisos() {
         return;
     }
     
-    container.innerHTML = avisosGerais.map(aviso => `
-        <div style="border-bottom: 1px solid #eee; padding: 10px 0;">
-            <small style="color: #888;">${aviso.data}</small>
-            <p style="margin: 5px 0;">${aviso.texto}</p>
-        </div>
-    `).join('');
+    container.innerHTML = avisosGerais.map(aviso => {
+        let midiaHTML = "";
+        if (aviso.midia) {
+            if (aviso.midia.includes("data:image")) {
+                midiaHTML = `<img src="${aviso.midia}" style="width:100%; margin-top:10px; border-radius:8px;">`;
+            } else if (aviso.midia.includes("data:video")) {
+                midiaHTML = `<video src="${aviso.midia}" controls style="width:100%; margin-top:10px; border-radius:8px;"></video>`;
+            }
+        }
+
+        return `
+            <div style="border-bottom: 1px solid #eee; padding: 15px 0;">
+                <small style="color: #888;">${aviso.data}</small>
+                <p style="margin: 10px 0; font-size: 1.1em;">${aviso.texto}</p>
+                ${midiaHTML}
+            </div>
+        `;
+    }).join('');
 }
 
 // --- PWA ---
