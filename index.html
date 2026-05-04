@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comunidade Pai de Multidão</title>
+    <!-- Remove erro de favicon 404 -->
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#004a99">
+</head>
+<body>
+    <div id="app">
+        <!-- Tela Inicial -->
+        <section id="home-screen" class="screen">
+            <div class="hero">
+                <div class="logo-container">
+                    <img src="logo.jpeg" alt="Logo Pai de Multidão" class="main-logo">
+                </div>
+                <h1>Igreja Comunidade Pai de Multidão</h1>
+                <p>Seja bem-vindo à nossa comunidade</p>
+            </div>
+            <div class="button-group">
+                <button class="btn btn-member" onclick="showScreen('member-login-screen')">SOU MEMBRO</button>
+                <button class="btn btn-admin" onclick="showScreen('admin-login-screen')">SOU ADMINISTRADOR</button>
+            </div>
+            <a href="#" class="search-link">Pesquisar instituições 🔍</a>
+        </section>
+
+        <!-- Login do Membro -->
+        <section id="member-login-screen" class="screen hidden">
+            <header class="app-bar">
+                <button onclick="showScreen('home-screen')">←</button>
+                <h2>Login de Membro</h2>
+            </header>
+            <div class="login-box" style="padding: 20px;">
+                <!-- Envolvido em FORM para suporte a gerenciadores de senha -->
+                <form onsubmit="loginMembro(); return false;">
+                    <input type="email" id="member-email" placeholder="Seu E-mail" required autocomplete="username">
+                    <input type="password" id="member-pass" placeholder="Sua Senha" required autocomplete="current-password">
+                    <button type="submit" class="btn btn-member">ENTRAR</button>
+                </form>
+                <p style="text-align:center; margin-top:15px;">Não tem conta? 
+                    <a href="#" onclick="showScreen('register-screen')">Cadastre-se</a>
+                </p>
+            </div>
+        </section>
+
+        <!-- Cadastro de Membro -->
+        <section id="register-screen" class="screen hidden">
+            <header class="app-bar">
+                <button onclick="showScreen('member-login-screen')">←</button>
+                <h2>Formulário de cadastro</h2>
+            </header>
+            <!-- O ID foi mantido para o script.js funcionar -->
+            <form id="registration-form" class="scroll-content">
+                <div class="card">
+                    <h3>Dados pessoais</h3>
+                    <div class="photo-upload">
+                        <div id="reg-avatar-preview" class="avatar-circle"></div>
+                        <label for="foto" class="btn-photo">Selecionar Minha Foto</label>
+                        <input type="file" id="foto" accept="image/*" onchange="previewImage(this, 'reg-avatar-preview')" style="display:none;">
+                    </div>
+                    <input type="text" id="reg-nome" placeholder="Nome" required autocomplete="given-name">
+                    <input type="text" id="reg-sobrenome" placeholder="Sobrenome" required autocomplete="family-name">
+                    <!-- Autocomplete para nova senha -->
+                    <input type="password" id="reg-pass" placeholder="Crie uma Senha" required autocomplete="new-password">
+                    
+                    <label>Data de nascimento</label>
+                    <input type="date" id="reg-nascimento" required>
+                    
+                    <div class="radio-group" style="margin-top: 10px;">
+                        <label><input type="radio" name="sexo" value="M" checked> Masculino</label>
+                        <label><input type="radio" name="sexo" value="F"> Feminino</label>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Ministério</h3>
+                    <label>Cargo</label>
+                    <select id="reg-cargo">
+                        <option value="Pastor">Pastor(a)</option>
+                        <option value="Evangelista">Evangelista</option>
+                        <option value="Presbítero">Presbítero</option>
+                        <option value="Missionário">Missionário(a)</option>
+                        <option value="Diácono">Diácono/Diaconisa</option>
+                        <option value="Cooperador">Cooperador(a)</option>
+                        <option value="Membro">Membro</option>
+                    </select>
+                    
+                    <label style="display:block; margin-top:10px;">Batizado?</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="batismo" value="Sim" onclick="document.getElementById('data-batismo-box').classList.remove('hidden')"> Sim</label>
+                        <label><input type="radio" name="batismo" value="Não" checked onclick="document.getElementById('data-batismo-box').classList.add('hidden')"> Não</label>
+                    </div>
+                    <div id="data-batismo-box" class="hidden">
+                        <label>Data de batismo</label>
+                        <input type="date" id="reg-data-batismo">
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Contatos</h3>
+                    <input type="tel" id="reg-tel" placeholder="Telefone/WhatsApp" autocomplete="tel">
+                    <input type="email" id="reg-email" placeholder="E-mail" required autocomplete="email">
+                </div>
+
+                <div class="footer-actions">
+                    <button type="submit" class="btn btn-save">FINALIZAR CADASTRO</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Login ADM -->
+        <section id="admin-login-screen" class="screen hidden">
+            <header class="app-bar">
+                <button onclick="showScreen('home-screen')">←</button>
+                <h2>Acesso Administrativo</h2>
+            </header>
+            <div class="login-box" style="padding: 20px;">
+                <form onsubmit="checkAdmin(); return false;">
+                    <input type="email" id="admin-email" placeholder="E-mail ADM" autocomplete="username">
+                    <input type="password" id="admin-pass" placeholder="Senha ADM" autocomplete="current-password">
+                    <button type="submit" class="btn btn-admin">ENTRAR</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Painel ADM -->
+        <section id="admin-dashboard" class="screen hidden">
+            <header class="app-bar">
+                <img src="logo.jpeg" class="mini-logo" alt="logo">
+                <h2>Painel ADM</h2>
+                <button onclick="showScreen('home-screen')">Sair</button>
+            </header>
+            <div class="tabs">
+                <button id="btn-tab-pessoas" class="active" onclick="switchTab('pessoas')">Membros</button>
+                <button id="btn-tab-avisos" onclick="switchTab('avisos')">Avisos</button>
+                <button id="btn-tab-grupos-adm" onclick="switchTab('grupos-adm')">Configurações</button>
+            </div>
+            <div class="scroll-content">
+                <div id="tab-pessoas" class="tab-content">
+                    <h4>Solicitações Pendentes:</h4>
+                    <div id="pending-list" class="list-container"></div>
+                    <hr style="margin: 15px 0;">
+                    <h4>Membros Ativos:</h4>
+                    <ul id="lista-pessoas-aprovadas"></ul>
+                </div>
+                <!-- Outras abas mantidas conforme original -->
+                <div id="tab-avisos" class="tab-content hidden">
+                    <div class="card">
+                        <textarea id="texto-aviso" placeholder="Escreva um comunicado para a igreja..."></textarea>
+                        <button class="btn btn-save" onclick="enviarAviso()">PUBLICAR AVISO</button>
+                    </div>
+                </div>
+                <div id="tab-grupos-adm" class="tab-content hidden">
+                    <div class="card">
+                        <label>Links de Grupos (WhatsApp)</label>
+                        <textarea id="texto-grupos" placeholder="Ex: Grupo Louvor: link..."></textarea>
+                        <button class="btn btn-save" onclick="salvarInfoIgreja('grupos')">SALVAR LINKS</button>
+                        <br><br>
+                        <label>Departamentos</label>
+                        <textarea id="texto-depto" placeholder="Ex: Infantil, Varões..."></textarea>
+                        <button class="btn btn-save" onclick="salvarInfoIgreja('depto')">SALVAR DEPTOS</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Perfil do Membro -->
+        <section id="member-profile" class="screen hidden">
+            <header class="app-bar">
+                <img src="logo.jpeg" class="mini-logo" alt="logo">
+                <h2>Portal do Membro</h2>
+                <button onclick="showScreen('home-screen')">Sair</button>
+            </header>
+            <div class="tabs" style="overflow-x: auto; display: flex;">
+                <button id="btn-tab-perfil" class="active" onclick="switchMemberTab('perfil')">Carteirinha</button>
+                <button id="btn-tab-edit" onclick="switchMemberTab('edit')">Meu Perfil</button>
+                <button id="btn-tab-igreja" onclick="switchMemberTab('igreja')">Igreja</button>
+                <button id="btn-tab-comunidade" onclick="switchMemberTab('comunidade')">Membros</button>
+            </div>
+
+            <div class="scroll-content">
+                <div id="sub-tab-perfil" class="member-sub-tab">
+                    <div class="carteirinha-digital">
+                        <div class="carteirinha-header">
+                            <img src="logo.jpeg" class="mini-logo-card" alt="logo">
+                            <h3>COMUNIDADE PAI DE MULTIDÃO</h3>
+                        </div>
+                        <div class="carteirinha-body">
+                            <div id="card-foto-display" class="foto-perfil-card"></div>
+                            <div class="info-membro">
+                                <p><strong>NOME:</strong> <span id="card-nome">---</span></p>
+                                <p><strong>CARGO:</strong> <span id="card-cargo">---</span></p>
+                                <p><strong>MEMBRO:</strong> <span style="color: #2ecc71; font-weight: bold;">ATIVO</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>Quadro de Avisos</h3>
+                        <div id="quadro-avisos-membro"></div>
+                    </div>
+                </div>
+
+                <div id="sub-tab-edit" class="member-sub-tab hidden">
+                    <div class="card">
+                        <h3>Atualizar meus Dados</h3>
+                        <form onsubmit="salvarProprioPerfil(); return false;">
+                            <div class="photo-upload">
+                                <div id="edit-avatar-preview" class="avatar-circle"></div>
+                                <label for="edit-foto" class="btn-photo">Trocar Foto</label>
+                                <input type="file" id="edit-foto" onchange="previewImage(this, 'edit-avatar-preview')" style="display:none;">
+                            </div>
+                            <input type="text" id="edit-nome" placeholder="Nome" autocomplete="name">
+                            <input type="tel" id="edit-tel" placeholder="Telefone" autocomplete="tel">
+                            <input type="password" id="edit-pass" placeholder="Nova Senha" autocomplete="new-password">
+                            <button type="submit" class="btn btn-save">SALVAR ALTERAÇÕES</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Abas Igreja e Comunidade mantidas -->
+                <div id="sub-tab-igreja" class="member-sub-tab hidden">
+                    <div class="card">
+                        <h4>Grupos Oficiais</h4>
+                        <div id="ver-grupos"></div>
+                    </div>
+                    <div class="card">
+                        <h4>Departamentos</h4>
+                        <div id="ver-depto"></div>
+                    </div>
+                </div>
+
+                <div id="sub-tab-comunidade" class="member-sub-tab hidden">
+                    <div class="card">
+                        <h4>Nossa Família (Membros)</h4>
+                        <ul id="lista-membros-comunidade" class="member-list-simple"></ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
