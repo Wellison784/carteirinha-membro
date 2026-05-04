@@ -1,10 +1,11 @@
 const CACHE_NAME = 'comunidade-v1';
 const assets = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/script.js',
-  '/logo.jpeg'
+  '/carteirinha-membro/',
+  '/carteirinha-membro/index.html',
+  '/carteirinha-membro/style.css',
+  '/carteirinha-membro/script.js',
+  '/carteirinha-membro/icon-192.png',
+  '/carteirinha-membro/icon-512.png'
 ];
 
 // Instalando o Service Worker e armazenando arquivos em cache

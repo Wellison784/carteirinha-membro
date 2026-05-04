@@ -281,7 +281,7 @@ function atualizarQuadroAvisos() {
 
 // --- PWA ---
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js') // Certifique-se de que não há "/" antes do nome
+    navigator.serviceWorker.register('./sw.js')
     .then(reg => console.log('Service Worker registrado!', reg))
     .catch(err => console.log('Erro no SW', err));
 }

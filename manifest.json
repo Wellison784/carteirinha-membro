@@ -1,12 +1,11 @@
 {
-  "id": "/pwa_church_app/index.html",
+  "id": "/carteirinha-membro/",
+  "start_url": "/carteirinha-membro/index.html",
   "name": "Igreja Comunidade Pai de Multidão",
   "short_name": "Igreja App",
-  "start_url": "/pwa_church_app/index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#004a99",
-  "description": "Aplicativo oficial da Comunidade Pai de Multidão para membros e administração.",
   "icons": [
     {
       "src": "icon-192.png",
