@@ -37,7 +37,7 @@ function checkAdmin() {
     const email = document.getElementById('admin-email').value;
     const pass = document.getElementById('admin-pass').value;
     // Credenciais conforme solicitado anteriormente
-    if(email === "wellison20111@gmail.com" && pass === "123") {
+    if(email === "wellison20111@gmail.com" && pass === "291220") {
         showScreen('admin-dashboard');
     } else {
         alert('E-mail ou senha de administrador incorretos!');
