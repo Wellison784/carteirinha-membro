@@ -88,7 +88,7 @@
                         <option value="Missionário">Missionária(o)</option>
                         <option value="Diácono">Diácono/Diaconisa</option>
                         <option value="Cooperador">Cooperador(a)</option>
-                         <option value="Membro">Obreiro (a)</option>
+                        <option value="Membro">Obreiro (a)</option>
                         <option value="Membro">Membro</option>
                     </select>
 
@@ -155,27 +155,21 @@
                     <ul id="lista-pessoas-aprovadas"></ul>
                 </div>
 
-                <!-- ABA DE AVISOS AJUSTADA -->
+                <!-- ABA DE AVISOS -->
                 <div id="tab-avisos" class="tab-content hidden">
                     <div class="card">
                         <textarea id="texto-aviso" placeholder="Escreva um comunicado para a igreja..."></textarea>
-
                         <div class="media-upload" style="margin: 10px 0;">
                             <label for="aviso-midia" class="btn-photo" style="background-color: #666;">Adicionar Foto ou Vídeo</label>
                             <input type="file" id="aviso-midia" accept="image/*,video/*" style="display:none;"
                                 onchange="previewAvisoMidia(this)">
                             <div id="preview-midia-container" style="margin-top:10px;"></div>
                         </div>
-
                         <button class="btn btn-save" onclick="enviarAviso()">PUBLICAR AVISO</button>
                     </div>
-
-                    <!-- ESTA É A PARTE NOVA: Lista de avisos existentes para excluir -->
                     <div class="card" style="margin-top: 20px;">
                         <h4>Gerenciar Publicações:</h4>
-                        <div id="lista-avisos-adm" style="margin-top: 10px;">
-                            <!-- O JavaScript vai colocar os avisos com botão "Excluir" aqui dentro -->
-                        </div>
+                        <div id="lista-avisos-adm" style="margin-top: 10px;"></div>
                     </div>
                 </div>
 
@@ -268,6 +262,28 @@
             </div>
         </section>
     </div>
+
+    <!-- CONEXÃO FIREBASE (O QUE ESTAVA FALTANDO) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, push, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC2UX5FRLvbmlv7KJoKuuFMDsB03T7zgK4",
+            authDomain: "comunidade-pai-de-multidao.firebaseapp.com",
+            databaseURL: "https://comunidade-pai-de-multidao-default-rtdb.firebaseio.com",
+            projectId: "comunidade-pai-de-multidao",
+            storageBucket: "comunidade-pai-de-multidao.firebasestorage.app",
+            messagingSenderId: "745360276491",
+            appId: "1:745360276491:web:ba9a6f61ae3ffcd17ddb0e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        window.db = getDatabase(app);
+        window.dbRefs = { ref, push, onValue, set, remove };
+        console.log("Firebase conectado!");
+    </script>
+
     <script src="script.js"></script>
 </body>
 

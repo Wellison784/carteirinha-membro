@@ -1,28 +1,75 @@
-// Banco de dados no navegador
-let membrosAprovados = JSON.parse(localStorage.getItem('membrosIgreja')) || [];
-let avisosGerais = JSON.parse(localStorage.getItem('avisosIgreja')) || [];
-let configsIgreja = JSON.parse(localStorage.getItem('configsIgreja')) || { grupos: "", depto: "" };
-let usuarioLogado = null;
-let midiaAvisoBase64 = ""; // Variável temporária para armazenar a mídia do aviso
+// --- CONFIGURAÇÃO E INICIALIZAÇÃO DO FIREBASE ---
+const { ref, push, onValue, set, remove } = window.dbRefs;
 
-// --- FUNÇÕES DE IMAGEM ---
+// Variáveis de Estado (Sincronizadas com a Nuvem)
+let membrosAprovados = [];
+let avisosGerais = [];
+let configsIgreja = { grupos: "", depto: "" };
+let usuarioLogado = null;
+let midiaAvisoBase64 = "";
+
+// --- INICIALIZAÇÃO DO BANCO DE DADOS ---
+function inicializarApp() {
+    // Escutar Membros Aprovados (Real-time)
+    onValue(ref(window.db, 'membros'), (snapshot) => {
+        const data = snapshot.val();
+        membrosAprovados = data ? Object.values(data) : [];
+        atualizarListaPessoas(); // Painel ADM
+        atualizarListaComunidade(); // Painel Membro
+    });
+
+    // Escutar Membros Pendentes (Apenas para o ADM ver)
+    onValue(ref(window.db, 'pendentes'), (snapshot) => {
+        const listaAprovacao = document.getElementById('pending-list');
+        if (!listaAprovacao) return;
+        listaAprovacao.innerHTML = "";
+        
+        const data = snapshot.val();
+        if (data) {
+            Object.keys(data).forEach(id => {
+                const dados = data[id];
+                const novoItem = document.createElement('div');
+                novoItem.className = 'member-card';
+                novoItem.style = "background: #f0f0f0; padding: 10px; margin-bottom: 5px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;";
+                novoItem.innerHTML = `
+                    <span><strong>${dados.nome}</strong> (${dados.cargo})</span>
+                    <button style="background: green; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;" 
+                    onclick="aprovarMembroFirebase('${id}')">Aprovar</button>
+                `;
+                listaAprovacao.appendChild(novoItem);
+            });
+        }
+    });
+
+    // Escutar Avisos (Real-time)
+    onValue(ref(window.db, 'avisos'), (snapshot) => {
+        const data = snapshot.val();
+        // Converte o objeto do Firebase em array e inverte para o mais novo aparecer primeiro
+        avisosGerais = data ? Object.values(data).reverse() : [];
+        atualizarQuadroAvisosADM();
+        atualizarQuadroAvisos();
+    });
+}
+
+// Rodar a inicialização
+inicializarApp();
+
+// --- FUNÇÕES DE IMAGEM E MÍDIA ---
 function previewImage(input, previewId) {
     const file = input.files[0];
     const preview = document.getElementById(previewId);
-
     if (file) {
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = (e) => {
             preview.style.backgroundImage = `url(${e.target.result})`;
             preview.style.backgroundSize = 'cover';
             preview.style.backgroundPosition = 'center';
-            preview.innerHTML = ''; // Limpa o texto "Foto"
+            preview.innerHTML = '';
         }
         reader.readAsDataURL(file);
     }
 }
 
-// Preview de Mídia para Avisos (Foto ou Vídeo)
 function previewAvisoMidia(input) {
     const container = document.getElementById('preview-midia-container');
     container.innerHTML = "";
@@ -31,8 +78,7 @@ function previewAvisoMidia(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         const file = input.files[0];
-
-        reader.onload = function(e) {
+        reader.onload = (e) => {
             midiaAvisoBase64 = e.target.result;
             if (file.type.includes('image')) {
                 container.innerHTML = `<img src="${midiaAvisoBase64}" style="width:100%; border-radius:8px; margin-top:10px;">`;
@@ -48,15 +94,23 @@ function previewAvisoMidia(input) {
 function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
     document.getElementById(screenId).classList.remove('hidden');
-    
-    if(screenId === 'admin-dashboard') {
-        atualizarListaPessoas();
-        carregarConfiguracoesADM();
-        atualizarQuadroAvisosADM(); // Carrega os avisos com botão de excluir no ADM
-    }
 }
 
-// --- SISTEMA DE LOGIN ---
+function switchTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.remove('hidden');
+    document.getElementById('btn-tab-' + tab).classList.add('active');
+}
+
+function switchMemberTab(tab) {
+    document.querySelectorAll('.member-sub-tab').forEach(c => c.classList.add('hidden'));
+    document.querySelectorAll('#member-profile .tabs button').forEach(b => b.classList.remove('active'));
+    document.getElementById('sub-tab-' + tab).classList.remove('hidden');
+    document.getElementById('btn-tab-' + tab).classList.add('active');
+}
+
+// --- SISTEMA DE ACESSO ---
 function checkAdmin() {
     const email = document.getElementById('admin-email').value;
     const pass = document.getElementById('admin-pass').value;
@@ -75,9 +129,6 @@ function loginMembro() {
     if(membro) {
         usuarioLogado = membro;
         preencherDadosMembro();
-        atualizarQuadroAvisos();
-        carregarInfosIgrejaNoMembro();
-        atualizarListaComunidade();
         showScreen('member-profile');
     } else {
         alert('Membro não encontrado ou ainda não aprovado!');
@@ -87,7 +138,6 @@ function loginMembro() {
 // --- CADASTRO E APROVAÇÃO ---
 document.getElementById('registration-form')?.addEventListener('submit', (e) => {
     e.preventDefault();
-    const batismoStatus = document.querySelector('input[name="batismo"]:checked').value;
     const fotoData = document.getElementById('reg-avatar-preview').style.backgroundImage;
     
     const novoCadastro = {
@@ -98,101 +148,32 @@ document.getElementById('registration-form')?.addEventListener('submit', (e) => 
         cargo: document.getElementById('reg-cargo').value,
         nascimento: document.getElementById('reg-nascimento').value,
         telefone: document.getElementById('reg-tel').value,
-        batizado: batismoStatus,
-        foto: fotoData,
-        dataBatismo: batismoStatus === "Sim" ? document.getElementById('reg-data-batismo').value : ""
+        foto: fotoData || ""
     };
 
-    solicitarAprovacao(novoCadastro);
-    alert('Cadastro enviado! Peça ao ADM para aprovar.');
+    // Envia para o Firebase no nó de "pendentes"
+    push(ref(window.db, 'pendentes'), novoCadastro);
+    alert('Cadastro enviado! Peça ao Wellison para aprovar no celular dele.');
     showScreen('home-screen');
 });
 
-function solicitarAprovacao(dados) {
-    const listaAprovacao = document.getElementById('pending-list');
-    if (!listaAprovacao) return;
-
-    const novoItem = document.createElement('div');
-    novoItem.className = 'member-card';
-    novoItem.style = "background: #f0f0f0; padding: 10px; margin-bottom: 5px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;";
+function aprovarMembroFirebase(id) {
+    const pendenteRef = ref(window.db, `pendentes/${id}`);
     
-    const dadosString = JSON.stringify(dados).replace(/"/g, '&quot;');
-
-    novoItem.innerHTML = `
-        <span><strong>${dados.nome}</strong> (${dados.cargo})</span>
-        <button class="btn-approve" style="background: green; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;" 
-        onclick="aprovarMembro(${dadosString}, this)">Aprovar</button>
-    `;
-    listaAprovacao.appendChild(novoItem);
+    // Busca os dados uma única vez para mover de pasta
+    onValue(pendenteRef, (snapshot) => {
+        const dados = snapshot.val();
+        if (dados) {
+            push(ref(window.db, 'membros'), dados); // Adiciona aos aprovados
+            remove(pendenteRef); // Remove dos pendentes
+            alert('Membro aprovado e sincronizado!');
+        }
+    }, { onlyOnce: true });
 }
 
-function aprovarMembro(dados, botao) {
-    membrosAprovados.push(dados);
-    localStorage.setItem('membrosIgreja', JSON.stringify(membrosAprovados));
-    atualizarListaPessoas();
-    if (botao && botao.parentElement) {
-        botao.parentElement.remove();
-    }
-    alert(dados.nome + ' aprovado com sucesso!');
-}
-
-// --- FUNÇÕES ADM ---
-function atualizarListaPessoas() {
-    const listaPessoas = document.getElementById('lista-pessoas-aprovadas');
-    if(!listaPessoas) return;
-    listaPessoas.innerHTML = "";
-    
-    membrosAprovados.forEach((membro, index) => {
-        const item = document.createElement('li');
-        item.style = "display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px;";
-        item.innerHTML = `
-            <span>${membro.nome} ${membro.sobrenome || ""} - <strong>${membro.cargo}</strong></span>
-            <button onclick="removerMembro(${index})" style="background: red; color: white; border: none; border-radius: 3px; cursor: pointer; padding: 2px 8px;">Excluir</button>
-        `;
-        listaPessoas.appendChild(item);
-    });
-}
-
-function removerMembro(index) {
-    if(confirm("Tem certeza que deseja excluir este membro?")) {
-        membrosAprovados.splice(index, 1);
-        localStorage.setItem('membrosIgreja', JSON.stringify(membrosAprovados));
-        atualizarListaPessoas();
-    }
-}
-
-function salvarInfoIgreja(tipo) {
-    if(tipo === 'grupos') {
-        configsIgreja.grupos = document.getElementById('texto-grupos').value;
-    } else {
-        configsIgreja.depto = document.getElementById('texto-depto').value;
-    }
-    localStorage.setItem('configsIgreja', JSON.stringify(configsIgreja));
-    alert("Informações atualizadas!");
-}
-
-function carregarConfiguracoesADM() {
-    const inputGrupos = document.getElementById('texto-grupos');
-    const inputDepto = document.getElementById('texto-depto');
-    if(inputGrupos) inputGrupos.value = configsIgreja.grupos;
-    if(inputDepto) inputDepto.value = configsIgreja.depto;
-}
-
-function switchTab(tab) {
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
-    
-    const targetTab = document.getElementById('tab-' + tab);
-    const targetBtn = document.getElementById('btn-tab-' + tab);
-    
-    if(targetTab) targetTab.classList.remove('hidden');
-    if(targetBtn) targetBtn.classList.add('active');
-}
-
-// --- FUNÇÕES MEMBRO ---
+// --- FUNÇÕES DE INTERFACE DO MEMBRO ---
 function preencherDadosMembro() {
     if(!usuarioLogado) return;
-
     document.getElementById('card-nome').innerText = `${usuarioLogado.nome} ${usuarioLogado.sobrenome || ""}`;
     document.getElementById('card-cargo').innerText = usuarioLogado.cargo;
     
@@ -200,47 +181,7 @@ function preencherDadosMembro() {
     if(usuarioLogado.foto && cardFoto) {
         cardFoto.style.backgroundImage = usuarioLogado.foto;
         cardFoto.style.backgroundSize = 'cover';
-        cardFoto.style.backgroundPosition = 'center';
     }
-
-    const editNome = document.getElementById('edit-nome');
-    const editTel = document.getElementById('edit-tel');
-    const editPass = document.getElementById('edit-pass');
-    
-    if(editNome) editNome.value = usuarioLogado.nome;
-    if(editTel) editTel.value = usuarioLogado.telefone || "";
-    if(editPass) editPass.value = usuarioLogado.senha;
-    
-    const editPreview = document.getElementById('edit-avatar-preview');
-    if(usuarioLogado.foto && editPreview) {
-        editPreview.style.backgroundImage = usuarioLogado.foto;
-        editPreview.style.backgroundSize = 'cover';
-        editPreview.style.backgroundPosition = 'center';
-        editPreview.innerHTML = '';
-    }
-}
-
-function salvarProprioPerfil() {
-    const index = membrosAprovados.findIndex(m => m.email === usuarioLogado.email);
-    if(index !== -1) {
-        const novaFoto = document.getElementById('edit-avatar-preview').style.backgroundImage;
-        membrosAprovados[index].nome = document.getElementById('edit-nome').value;
-        membrosAprovados[index].telefone = document.getElementById('edit-tel').value;
-        membrosAprovados[index].senha = document.getElementById('edit-pass').value;
-        membrosAprovados[index].foto = novaFoto;
-        
-        localStorage.setItem('membrosIgreja', JSON.stringify(membrosAprovados));
-        usuarioLogado = membrosAprovados[index];
-        preencherDadosMembro();
-        alert("Seus dados foram atualizados!");
-    }
-}
-
-function carregarInfosIgrejaNoMembro() {
-    const verGrupos = document.getElementById('ver-grupos');
-    const verDepto = document.getElementById('ver-depto');
-    if(verGrupos) verGrupos.innerText = configsIgreja.grupos || "Nenhum link cadastrado.";
-    if(verDepto) verDepto.innerText = configsIgreja.depto || "Nenhum departamento listado.";
 }
 
 function atualizarListaComunidade() {
@@ -248,107 +189,73 @@ function atualizarListaComunidade() {
     if(!lista) return;
     lista.innerHTML = membrosAprovados.map(m => `
         <li style="padding: 10px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px;">
-            <div style="width: 30px; height: 30px; border-radius: 50%; background-image: ${m.foto || 'none'}; background-color: #ddd; background-size: cover; background-position: center;"></div>
+            <div style="width: 35px; height: 35px; border-radius: 50%; background-image: ${m.foto || 'none'}; background-color: #ddd; background-size: cover; background-position: center;"></div>
             <span><strong>${m.nome}</strong> - ${m.cargo}</span>
         </li>
     `).join('');
 }
 
-function switchMemberTab(tab) {
-    document.querySelectorAll('.member-sub-tab').forEach(c => c.classList.add('hidden'));
-    document.querySelectorAll('#member-profile .tabs button').forEach(b => b.classList.remove('active'));
-    
-    const targetTab = document.getElementById('sub-tab-' + tab);
-    const targetBtn = document.getElementById('btn-tab-' + tab);
-    
-    if(targetTab) targetTab.classList.remove('hidden');
-    if(targetBtn) targetBtn.classList.add('active');
-}
-
-// --- AVISOS (COM EXCLUSÃO) ---
+// --- GESTÃO DE AVISOS ---
 function enviarAviso() {
-    const inputAviso = document.getElementById('texto-aviso');
-    if(!inputAviso) return;
-    
-    const texto = inputAviso.value;
-    if(texto.trim() === "" && midiaAvisoBase64 === "") return alert("Digite um aviso ou adicione uma mídia!");
-    
-    const novoAviso = { 
-        texto: texto, 
+    const texto = document.getElementById('texto-aviso').value;
+    if(!texto && !midiaAvisoBase64) return alert("Escreva algo ou adicione uma foto/vídeo!");
+
+    const novoAviso = {
+        texto: texto,
         midia: midiaAvisoBase64,
-        data: new Date().toLocaleString('pt-BR') 
+        data: new Date().toLocaleString('pt-BR')
     };
 
-    avisosGerais.unshift(novoAviso);
-    localStorage.setItem('avisosIgreja', JSON.stringify(avisosGerais));
+    push(ref(window.db, 'avisos'), novoAviso);
     
-    inputAviso.value = "";
+    // Limpar campos
+    document.getElementById('texto-aviso').value = "";
     midiaAvisoBase64 = "";
-    const previewContainer = document.getElementById('preview-midia-container');
-    if(previewContainer) previewContainer.innerHTML = "";
-    
-    alert("Aviso publicado!");
-    atualizarQuadroAvisosADM(); // Atualiza a lista no ADM
-    atualizarQuadroAvisos();    // Atualiza a visualização do membro
-}
-
-// Função para o ADM gerenciar avisos (com botão excluir)
-function atualizarQuadroAvisosADM() {
-    const container = document.getElementById('lista-avisos-adm'); // Certifique-se de ter essa ID no seu HTML do ADM
-    if(!container) return;
-    
-    container.innerHTML = avisosGerais.map((aviso, index) => `
-        <div style="border-bottom: 1px solid #ddd; padding: 10px; margin-bottom: 10px; background: #fff; border-radius: 5px;">
-            <div style="display: flex; justify-content: space-between;">
-                <small style="color: #888;">${aviso.data}</small>
-                <button onclick="excluirAviso(${index})" style="background: #ff4444; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer;">Excluir</button>
-            </div>
-            <p style="margin: 5px 0;">${aviso.texto}</p>
-        </div>
-    `).join('');
-}
-
-function excluirAviso(index) {
-    if(confirm("Deseja apagar esta publicação?")) {
-        avisosGerais.splice(index, 1);
-        localStorage.setItem('avisosIgreja', JSON.stringify(avisosGerais));
-        atualizarQuadroAvisosADM();
-        atualizarQuadroAvisos();
-    }
+    document.getElementById('preview-midia-container').innerHTML = "";
+    alert("Aviso publicado para toda a igreja!");
 }
 
 function atualizarQuadroAvisos() {
     const container = document.getElementById('quadro-avisos-membro');
     if(!container) return;
     
-    if(avisosGerais.length === 0) {
-        container.innerHTML = "<p>Nenhum aviso importante hoje.</p>";
-        return;
-    }
-    
-    container.innerHTML = avisosGerais.map(aviso => {
-        let midiaHTML = "";
-        if (aviso.midia) {
-            if (aviso.midia.includes("data:image")) {
-                midiaHTML = `<img src="${aviso.midia}" style="width:100%; margin-top:10px; border-radius:8px;">`;
-            } else if (aviso.midia.includes("data:video")) {
-                midiaHTML = `<video src="${aviso.midia}" controls style="width:100%; margin-top:10px; border-radius:8px;"></video>`;
-            }
-        }
-
-        return `
-            <div style="border-bottom: 1px solid #eee; padding: 15px 0;">
-                <small style="color: #888;">${aviso.data}</small>
-                <p style="margin: 10px 0; font-size: 1.1em;">${aviso.texto}</p>
-                ${midiaHTML}
-            </div>
-        `;
-    }).join('');
+    container.innerHTML = avisosGerais.map(aviso => `
+        <div style="border-bottom: 1px solid #eee; padding: 15px 0;">
+            <small style="color: #888;">${aviso.data}</small>
+            <p style="margin: 10px 0; font-size: 1.1em;">${aviso.texto}</p>
+            ${aviso.midia ? (aviso.midia.includes('video') ? 
+                `<video src="${aviso.midia}" controls style="width:100%; border-radius:8px;"></video>` : 
+                `<img src="${aviso.midia}" style="width:100%; border-radius:8px;">`) : ""}
+        </div>
+    `).join('');
 }
 
-// --- PWA ---
+function atualizarQuadroAvisosADM() {
+    const container = document.getElementById('lista-avisos-adm');
+    if(!container) return;
+    container.innerHTML = avisosGerais.map((aviso, index) => `
+        <div style="background: #fff; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #ddd;">
+            <small>${aviso.data}</small>
+            <p>${aviso.texto.substring(0, 50)}...</p>
+        </div>
+    `).join('');
+}
+
+function atualizarListaPessoas() {
+    const listaPessoas = document.getElementById('lista-pessoas-aprovadas');
+    if(!listaPessoas) return;
+    listaPessoas.innerHTML = membrosAprovados.map(m => `
+        <li style="display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+            <span>${m.nome} - <strong>${m.cargo}</strong></span>
+        </li>
+    `).join('');
+}
+
+// --- FINALIZAÇÃO: SERVICE WORKER (PWA) ---
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js')
-    .then(reg => console.log('Service Worker registrado!', reg))
-    .catch(err => console.log('Erro no SW', err));
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('PWA: Service Worker ativo!', reg.scope))
+        .catch(err => console.log('PWA: Erro ao registrar SW', err));
+    });
 }
