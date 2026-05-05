@@ -1,6 +1,6 @@
 {
-  "id": "/carteirinha-membro/",
-  "start_url": "/carteirinha-membro/index.html",
+  "id": "./",
+  "start_url": "./index.html",
   "name": "Igreja Comunidade Pai de Multidão",
   "short_name": "Igreja App",
   "display": "standalone",

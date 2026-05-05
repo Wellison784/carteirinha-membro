@@ -1,28 +1,47 @@
-const CACHE_NAME = 'comunidade-v1';
+const CACHE_NAME = 'comunidade-v2'; // Mudei de v1 para v2 para forçar a atualização
+
+// Ajustei para caminhos relativos (./) que funcionam em qualquer lugar
 const assets = [
-  '/carteirinha-membro/',
-  '/carteirinha-membro/index.html',
-  '/carteirinha-membro/style.css',
-  '/carteirinha-membro/script.js',
-  '/carteirinha-membro/icon-192.png',
-  '/carteirinha-membro/icon-512.png'
+  './',
+  './index.html',
+  './style.css',
+  './script.js',
+  './manifest.json',
+  './logo.jpeg',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
-// Instalando o Service Worker e armazenando arquivos em cache
+// Instalando o Service Worker
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(assets);
+      // Usamos um mapeamento para adicionar um por um.
+      // Assim, se um ícone estiver faltando, ele não trava o resto do cache.
+      return Promise.all(
+        assets.map(url => {
+          return cache.add(url).catch(err => {
+            console.warn('Arquivo não encontrado para o cache:', url);
+          });
+        })
+      );
     })
   );
 });
 
 // Ativando e limpando caches antigos
 self.addEventListener('activate', event => {
-  console.log('Service Worker ativo');
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.filter(name => name !== CACHE_NAME).map(name => caches.delete(name))
+      );
+    })
+  );
+  console.log('PWA: Service Worker ativo e atualizado!');
 });
 
-// Respondendo requisições (Offline)
+// Estratégia de Cache First (Offline)
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request).then(response => {

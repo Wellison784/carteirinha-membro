@@ -1,261 +1,254 @@
-// --- CONFIGURAÇÃO E INICIALIZAÇÃO DO FIREBASE ---
-const { ref, push, onValue, set, remove } = window.dbRefs;
-
-// Variáveis de Estado (Sincronizadas com a Nuvem)
 let membrosAprovados = [];
 let avisosGerais = [];
-let configsIgreja = { grupos: "", depto: "" };
+let itensGestao = [];
 let usuarioLogado = null;
-let midiaAvisoBase64 = "";
 
-// --- INICIALIZAÇÃO DO BANCO DE DADOS ---
 function inicializarApp() {
-    // Escutar Membros Aprovados (Real-time)
+    const { ref, onValue } = window.dbRefs;
+
     onValue(ref(window.db, 'membros'), (snapshot) => {
         const data = snapshot.val();
-        membrosAprovados = data ? Object.values(data) : [];
-        atualizarListaPessoas(); // Painel ADM
-        atualizarListaComunidade(); // Painel Membro
+        membrosAprovados = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+        atualizarListaPessoas();
     });
 
-    // Escutar Membros Pendentes (Apenas para o ADM ver)
     onValue(ref(window.db, 'pendentes'), (snapshot) => {
-        const listaAprovacao = document.getElementById('pending-list');
-        if (!listaAprovacao) return;
-        listaAprovacao.innerHTML = "";
-        
+        const lista = document.getElementById('pending-list');
+        if (!lista) return;
+        lista.innerHTML = "";
         const data = snapshot.val();
         if (data) {
             Object.keys(data).forEach(id => {
-                const dados = data[id];
-                const novoItem = document.createElement('div');
-                novoItem.className = 'member-card';
-                novoItem.style = "background: #f0f0f0; padding: 10px; margin-bottom: 5px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;";
-                novoItem.innerHTML = `
-                    <span><strong>${dados.nome}</strong> (${dados.cargo})</span>
-                    <button style="background: green; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;" 
-                    onclick="aprovarMembroFirebase('${id}')">Aprovar</button>
-                `;
-                listaAprovacao.appendChild(novoItem);
+                const d = data[id];
+                lista.innerHTML += `
+                    <div class="card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <div><strong>${d.nome} ${d.sobrenome}</strong><br><small>${d.cargo}</small></div>
+                        <button class="btn-save" onclick="aprovarMembroFirebase('${id}')">Aprovar</button>
+                    </div>`;
             });
         }
     });
 
-    // Escutar Avisos (Real-time)
     onValue(ref(window.db, 'avisos'), (snapshot) => {
         const data = snapshot.val();
-        // Converte o objeto do Firebase em array e inverte para o mais novo aparecer primeiro
-        avisosGerais = data ? Object.values(data).reverse() : [];
-        atualizarQuadroAvisosADM();
+        avisosGerais = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })).reverse() : [];
         atualizarQuadroAvisos();
+    });
+
+    onValue(ref(window.db, 'gestao'), (snapshot) => {
+        const data = snapshot.val();
+        itensGestao = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+        atualizarAreaMembroGestao();
     });
 }
 
-// Rodar a inicialização
-inicializarApp();
+setTimeout(() => { if (window.db) inicializarApp(); }, 1000);
 
-// --- FUNÇÕES DE IMAGEM E MÍDIA ---
-function previewImage(input, previewId) {
-    const file = input.files[0];
-    const preview = document.getElementById(previewId);
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            preview.style.backgroundImage = `url(${e.target.result})`;
-            preview.style.backgroundSize = 'cover';
-            preview.style.backgroundPosition = 'center';
-            preview.innerHTML = '';
-        }
-        reader.readAsDataURL(file);
-    }
-}
-
-function previewAvisoMidia(input) {
-    const container = document.getElementById('preview-midia-container');
-    container.innerHTML = "";
-    midiaAvisoBase64 = "";
-
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        const file = input.files[0];
-        reader.onload = (e) => {
-            midiaAvisoBase64 = e.target.result;
-            if (file.type.includes('image')) {
-                container.innerHTML = `<img src="${midiaAvisoBase64}" style="width:100%; border-radius:8px; margin-top:10px;">`;
-            } else if (file.type.includes('video')) {
-                container.innerHTML = `<video src="${midiaAvisoBase64}" controls style="width:100%; border-radius:8px; margin-top:10px;"></video>`;
-            }
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-// --- NAVEGAÇÃO ---
-function showScreen(screenId) {
+function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-    document.getElementById(screenId).classList.remove('hidden');
+    document.getElementById(id).classList.remove('hidden');
 }
 
 function switchTab(tab) {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
     document.getElementById('tab-' + tab).classList.remove('hidden');
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
     document.getElementById('btn-tab-' + tab).classList.add('active');
 }
 
-function switchMemberTab(tab) {
-    document.querySelectorAll('.member-sub-tab').forEach(c => c.classList.add('hidden'));
-    document.querySelectorAll('#member-profile .tabs button').forEach(b => b.classList.remove('active'));
-    document.getElementById('sub-tab-' + tab).classList.remove('hidden');
-    document.getElementById('btn-tab-' + tab).classList.add('active');
-}
+// LOGIN DO MEMBRO CORRIGIDO E SINCRONIZADO
+window.loginMembro = function() {
+    const e = document.getElementById('member-email').value;
+    const p = document.getElementById('member-pass').value;
+    const m = membrosAprovados.find(u => u.email === e && u.senha === p);
+    
+    if (m) {
+        usuarioLogado = m;
+        
+        // 1. Preenche Nome e Cargo na carteirinha
+        document.getElementById('card-nome').innerText = `${m.nome} ${m.sobrenome}`;
+        const cargoEl = document.getElementById('card-cargo-display') || document.getElementById('card-cargo');
+        if (cargoEl) cargoEl.innerText = m.cargo;
 
-// --- SISTEMA DE ACESSO ---
-function checkAdmin() {
-    const email = document.getElementById('admin-email').value;
-    const pass = document.getElementById('admin-pass').value;
-    if(email === "wellison20111@gmail.com" && pass === "291220") {
-        showScreen('admin-dashboard');
-    } else {
-        alert('E-mail ou senha de administrador incorretos!');
-    }
-}
+        // 2. Carrega a Foto de Perfil imediatamente
+        const pic = document.getElementById('card-foto-display');
+        if (m.foto && pic) {
+            pic.style.backgroundImage = `url(${m.foto})`;
+            pic.style.backgroundSize = 'cover';
+            pic.style.backgroundPosition = 'center';
+        } else if (pic) {
+            pic.style.backgroundImage = 'none';
+            pic.style.backgroundColor = '#ccc';
+        }
 
-function loginMembro() {
-    const email = document.getElementById('member-email').value;
-    const pass = document.getElementById('member-pass').value;
-    const membro = membrosAprovados.find(m => m.email === email && m.senha === pass);
-
-    if(membro) {
-        usuarioLogado = membro;
-        preencherDadosMembro();
+        // 3. Força a atualização visual dos Departamentos e Avisos
+        atualizarAreaMembroGestao();
+        atualizarQuadroAvisos();
+        
+        // 4. Abre a tela do perfil
         showScreen('member-profile');
     } else {
-        alert('Membro não encontrado ou ainda não aprovado!');
+        alert('Usuário não encontrado ou aguardando aprovação.');
     }
 }
 
-// --- CADASTRO E APROVAÇÃO ---
+window.alterarFotoPerfil = function(input) {
+    if (input.files && input.files[0] && usuarioLogado) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const b64 = e.target.result;
+            window.dbRefs.set(window.dbRefs.ref(window.db, `membros/${usuarioLogado.id}/foto`), b64)
+                .then(() => {
+                    const pic = document.getElementById('card-foto-display');
+                    if(pic) pic.style.backgroundImage = `url(${b64})`;
+                    usuarioLogado.foto = b64;
+                    alert("Foto atualizada!");
+                });
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
 document.getElementById('registration-form')?.addEventListener('submit', (e) => {
     e.preventDefault();
-    const fotoData = document.getElementById('reg-avatar-preview').style.backgroundImage;
-    
-    const novoCadastro = {
+    let fotoPreview = document.getElementById('reg-avatar-preview').style.backgroundImage;
+    fotoPreview = fotoPreview.replace('url("', '').replace('")', '');
+
+    const dados = {
         nome: document.getElementById('reg-nome').value,
         sobrenome: document.getElementById('reg-sobrenome').value,
         email: document.getElementById('reg-email').value,
         senha: document.getElementById('reg-pass').value,
         cargo: document.getElementById('reg-cargo').value,
         nascimento: document.getElementById('reg-nascimento').value,
+        batizado: document.getElementById('reg-batizado')?.value || "Não informado",
+        dataBatismo: document.getElementById('reg-data-batismo').value,
         telefone: document.getElementById('reg-tel').value,
-        foto: fotoData || ""
+        foto: fotoPreview || "",
+        status: "Ativo"
     };
-
-    // Envia para o Firebase no nó de "pendentes"
-    push(ref(window.db, 'pendentes'), novoCadastro);
-    alert('Cadastro enviado! Peça ao Wellison para aprovar no celular dele.');
+    
+    window.dbRefs.push(window.dbRefs.ref(window.db, 'pendentes'), dados);
+    alert('Cadastro enviado ao Pastor!');
     showScreen('home-screen');
 });
 
+window.salvarGestao = function() {
+    const tipo = document.getElementById('gestao-tipo').value;
+    const nome = document.getElementById('gestao-nome').value;
+    const info = document.getElementById('gestao-info').value;
+    window.dbRefs.push(window.dbRefs.ref(window.db, 'gestao'), { tipo, nome, info });
+    alert("Adicionado!");
+    document.getElementById('gestao-nome').value = "";
+    document.getElementById('gestao-info').value = "";
+}
+
+function atualizarAreaMembroGestao() {
+    const dL = document.getElementById('lista-deptos-membro');
+    const zL = document.getElementById('lista-zaps-membro');
+    const aL = document.getElementById('admin-gestao-list');
+    if(dL) dL.innerHTML = ""; if(zL) zL.innerHTML = ""; if(aL) aL.innerHTML = "";
+
+    itensGestao.forEach(i => {
+        if (i.tipo === 'depto') {
+            if(dL) dL.innerHTML += `<div class="card"><strong>${i.nome}</strong><p>${i.info}</p></div>`;
+        } else {
+            if(zL) zL.innerHTML += `
+                <a href="${i.info}" target="_blank" class="btn btn-member" style="background:#25d366; color:white; text-decoration:none; display:block; text-align:center; padding:12px; border-radius:8px; margin-bottom:10px; font-weight:bold;">
+                    🟢 ACESSAR GRUPO: ${i.nome}
+                </a>`;
+        }
+        if(aL) aL.innerHTML += `<div class="card" style="display:flex; justify-content:space-between"><span>${i.nome}</span><button onclick="removerGestao('${i.id}')" style="color:red; border:none; cursor:pointer;">🗑️</button></div>`;
+    });
+}
+
+function removerGestao(id) { 
+    if(confirm("Excluir item?")) window.dbRefs.remove(window.dbRefs.ref(window.db, `gestao/${id}`)); 
+}
+
+function atualizarListaPessoas() {
+    const lista = document.getElementById('lista-pessoas-aprovadas');
+    if (lista) {
+        lista.innerHTML = membrosAprovados.map(m => `
+            <li class="card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                <span>${m.nome} (${m.cargo})</span>
+                <button onclick="removerMembro('${m.id}')" style="color:red; background:none; border:none;">🗑️</button>
+            </li>`).join('');
+    }
+}
+
+function removerMembro(id) { 
+    if(confirm("Excluir membro?")) window.dbRefs.remove(window.dbRefs.ref(window.db, `membros/${id}`)); 
+}
+
 function aprovarMembroFirebase(id) {
-    const pendenteRef = ref(window.db, `pendentes/${id}`);
-    
-    // Busca os dados uma única vez para mover de pasta
-    onValue(pendenteRef, (snapshot) => {
-        const dados = snapshot.val();
-        if (dados) {
-            push(ref(window.db, 'membros'), dados); // Adiciona aos aprovados
-            remove(pendenteRef); // Remove dos pendentes
-            alert('Membro aprovado e sincronizado!');
+    const { ref, set, remove, onValue } = window.dbRefs;
+    onValue(ref(window.db, `pendentes/${id}`), (snap) => {
+        const d = snap.val();
+        if (d) { 
+            set(ref(window.db, `membros/${id}`), d); 
+            remove(ref(window.db, `pendentes/${id}`)); 
         }
     }, { onlyOnce: true });
 }
 
-// --- FUNÇÕES DE INTERFACE DO MEMBRO ---
-function preencherDadosMembro() {
-    if(!usuarioLogado) return;
-    document.getElementById('card-nome').innerText = `${usuarioLogado.nome} ${usuarioLogado.sobrenome || ""}`;
-    document.getElementById('card-cargo').innerText = usuarioLogado.cargo;
-    
-    const cardFoto = document.getElementById('card-foto-display');
-    if(usuarioLogado.foto && cardFoto) {
-        cardFoto.style.backgroundImage = usuarioLogado.foto;
-        cardFoto.style.backgroundSize = 'cover';
-    }
-}
-
-function atualizarListaComunidade() {
-    const lista = document.getElementById('lista-membros-comunidade');
-    if(!lista) return;
-    lista.innerHTML = membrosAprovados.map(m => `
-        <li style="padding: 10px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px;">
-            <div style="width: 35px; height: 35px; border-radius: 50%; background-image: ${m.foto || 'none'}; background-color: #ddd; background-size: cover; background-position: center;"></div>
-            <span><strong>${m.nome}</strong> - ${m.cargo}</span>
-        </li>
-    `).join('');
-}
-
-// --- GESTÃO DE AVISOS ---
-function enviarAviso() {
+window.enviarAviso = function() {
     const texto = document.getElementById('texto-aviso').value;
-    if(!texto && !midiaAvisoBase64) return alert("Escreva algo ou adicione uma foto/vídeo!");
+    const midia = document.getElementById('upload-midia').files[0];
+    if (midia) {
+        const reader = new FileReader();
+        reader.onload = (e) => salvarAviso(texto, e.target.result);
+        reader.readAsDataURL(midia);
+    } else { salvarAviso(texto, ""); }
+}
 
-    const novoAviso = {
-        texto: texto,
-        midia: midiaAvisoBase64,
-        data: new Date().toLocaleString('pt-BR')
-    };
-
-    push(ref(window.db, 'avisos'), novoAviso);
-    
-    // Limpar campos
+function salvarAviso(texto, midia) {
+    window.dbRefs.push(window.dbRefs.ref(window.db, 'avisos'), { 
+        texto, 
+        midia, 
+        data: new Date().toLocaleDateString('pt-BR') 
+    });
+    alert("Postado!");
     document.getElementById('texto-aviso').value = "";
-    midiaAvisoBase64 = "";
-    document.getElementById('preview-midia-container').innerHTML = "";
-    alert("Aviso publicado para toda a igreja!");
 }
 
 function atualizarQuadroAvisos() {
-    const container = document.getElementById('quadro-avisos-membro');
-    if(!container) return;
-    
-    container.innerHTML = avisosGerais.map(aviso => `
-        <div style="border-bottom: 1px solid #eee; padding: 15px 0;">
-            <small style="color: #888;">${aviso.data}</small>
-            <p style="margin: 10px 0; font-size: 1.1em;">${aviso.texto}</p>
-            ${aviso.midia ? (aviso.midia.includes('video') ? 
-                `<video src="${aviso.midia}" controls style="width:100%; border-radius:8px;"></video>` : 
-                `<img src="${aviso.midia}" style="width:100%; border-radius:8px;">`) : ""}
-        </div>
-    `).join('');
+    const html = avisosGerais.map(a => `
+        <div class="card" style="position:relative; margin-bottom:15px;">
+            <button onclick="removerAviso('${a.id}')" style="position:absolute; top:5px; right:5px; color:red; border:none; background:none;">🗑️</button>
+            <small>${a.data}</small><p style="margin-top:10px">${a.texto}</p>
+            ${a.midia ? `<img src="${a.midia}" style="width:100%; border-radius:8px; margin-top:10px">` : ""}
+        </div>`).join('');
+    if(document.getElementById('quadro-avisos-membro')) document.getElementById('quadro-avisos-membro').innerHTML = html;
+    if(document.getElementById('lista-avisos-adm')) document.getElementById('lista-avisos-adm').innerHTML = html;
 }
 
-function atualizarQuadroAvisosADM() {
-    const container = document.getElementById('lista-avisos-adm');
-    if(!container) return;
-    container.innerHTML = avisosGerais.map((aviso, index) => `
-        <div style="background: #fff; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #ddd;">
-            <small>${aviso.data}</small>
-            <p>${aviso.texto.substring(0, 50)}...</p>
-        </div>
-    `).join('');
+function removerAviso(id) { 
+    if(confirm("Remover aviso?")) window.dbRefs.remove(window.dbRefs.ref(window.db, `avisos/${id}`)); 
 }
 
-function atualizarListaPessoas() {
-    const listaPessoas = document.getElementById('lista-pessoas-aprovadas');
-    if(!listaPessoas) return;
-    listaPessoas.innerHTML = membrosAprovados.map(m => `
-        <li style="display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
-            <span>${m.nome} - <strong>${m.cargo}</strong></span>
-        </li>
-    `).join('');
+window.checkAdmin = function() {
+    const e = document.getElementById('admin-email').value;
+    const p = document.getElementById('admin-pass').value;
+    if (e === "wellison20111@gmail.com" && p === "291220") showScreen('admin-dashboard');
+    else alert('Erro!');
 }
 
-// --- FINALIZAÇÃO: SERVICE WORKER (PWA) ---
+window.previewImage = function(input, id) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => { 
+            const el = document.getElementById(id);
+            el.style.backgroundImage = `url(${e.target.result})`;
+            el.style.backgroundSize = 'cover';
+            el.style.backgroundPosition = 'center';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('PWA: Service Worker ativo!', reg.scope))
-        .catch(err => console.log('PWA: Erro ao registrar SW', err));
+        navigator.serviceWorker.register('./sw.js').catch(err => console.log('Erro SW:', err));
     });
 }
