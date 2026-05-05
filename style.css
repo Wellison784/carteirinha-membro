@@ -25,7 +25,7 @@ body {
     min-height: 100vh; 
     display: flex; 
     flex-direction: column; 
-    max-width: 500px; /* Limita largura para parecer um app no PC */
+    max-width: 500px; 
     margin: 0 auto;
     background: var(--bg);
 }
@@ -212,13 +212,18 @@ textarea { height: 80px; resize: none; }
 
 .carteirinha-body { display: flex; gap: 15px; align-items: center; }
 
+/* AJUSTE AQUI: Foto da carteirinha com tamanho fixo e visível */
 .foto-perfil-card {
-    width: 80px;
-    height: 100px;
-    background: #fff;
+    width: 90px;
+    height: 110px;
+    background-color: #ffffff;
+    background-image: none; /* O JS vai preencher isso */
+    border: 2px solid white;
     border-radius: 8px;
     background-size: cover;
     background-position: center;
+    flex-shrink: 0; /* Impede de amassar a foto */
+    display: block;
 }
 
 .info-membro p { margin-bottom: 5px; font-size: 12px; }
