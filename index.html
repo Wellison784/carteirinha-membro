@@ -11,7 +11,6 @@
 </head>
 <body>
     <div id="app">
-        <!-- TELA INICIAL -->
         <section id="home-screen" class="screen">
             <div class="hero">
                 <img src="logo.jpeg" alt="Logo" class="main-logo">
@@ -24,7 +23,6 @@
             </div>
         </section>
 
-        <!-- FORMULÁRIO DE CADASTRO -->
         <section id="register-screen" class="screen hidden">
             <header class="app-bar">
                 <button onclick="showScreen('member-login-screen')">←</button>
@@ -81,7 +79,6 @@
             </form>
         </section>
 
-        <!-- LOGIN MEMBRO -->
         <section id="member-login-screen" class="screen hidden">
             <header class="app-bar">
                 <button onclick="showScreen('home-screen')">←</button>
@@ -95,7 +92,18 @@
             </form>
         </section>
 
-        <!-- PERFIL DO MEMBRO (PORTAL COM ABAS) -->
+        <section id="admin-login-screen" class="screen hidden">
+            <header class="app-bar">
+                <button onclick="showScreen('home-screen')">←</button>
+                <h2>Login Administrativo</h2>
+            </header>
+            <form onsubmit="event.preventDefault(); checkAdmin();" class="card" style="margin-top: 20px;">
+                <input type="email" id="admin-email" placeholder="E-mail do Administrador" required autocomplete="username">
+                <input type="password" id="admin-pass" placeholder="Senha ADM" required autocomplete="current-password">
+                <button type="submit" class="btn btn-admin">ACESSAR PAINEL</button>
+            </form>
+        </section>
+
         <section id="member-profile" class="screen hidden">
             <header class="app-bar">
                 <h2>Olá, <span id="welcome-nome">...</span></h2>
@@ -106,11 +114,10 @@
                 <button id="btn-m-carteirinha" class="active" onclick="navegarMembro('carteirinha')">Carteirinha</button>
                 <button id="btn-m-perfil" onclick="navegarMembro('perfil')">Meu Perfil</button>
                 <button id="btn-m-igreja" onclick="navegarMembro('igreja')">Igreja</button>
-                <button id="btn-m-membros" onclick="navegarMembro('lista-membros')">Membros</button>
+                <button id="btn-m-lista-membros" onclick="navegarMembro('lista-membros')">Membros</button>
             </div>
 
             <div class="scroll-content">
-                <!-- CONTEÚDO: CARTEIRINHA -->
                 <div id="tab-m-carteirinha" class="tab-content-membro">
                     <div class="card">
                         <h3>🏛️ Carteirinha Digital</h3>
@@ -120,18 +127,12 @@
                                 <h3>COMUNIDADE PAI DE MULTIDÃO</h3>
                             </div>
                             <div class="carteirinha-body">
-                                <!-- ALTERAÇÃO AQUI: Onclick para abrir galeria direto na foto -->
-                                <div id="card-foto-display" class="foto-perfil-card" onclick="document.getElementById('input-foto-direta').click()" style="cursor: pointer; position: relative;">
-                                    <span style="position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.5); color: #fff; font-size: 10px; text-align: center;">Trocar Foto</span>
-                                </div>
-                                <!-- Input invisível para a troca rápida -->
-                                <input type="file" id="input-foto-direta" accept="image/*" style="display: none;" onchange="atualizarFotoDireto(this)">
-
+                                <div id="card-foto-display" class="foto-perfil-card"></div>
                                 <div class="info-membro">
                                     <p>NOME: <span id="card-nome">...</span></p>
                                     <p>CARGO: <span id="card-cargo-display">...</span></p>
                                     <p>STATUS: <span id="card-status" class="status-ativo">ATIVO</span></p>
-                                    <p>VALIDADE: <span id="card-validade" style="color: #ffd700; font-weight: bold;">...</span></p>
+                                    <p>VALIDADE: <span id="card-validade">...</span></p>
                                 </div>
                             </div>
                         </div>
@@ -142,7 +143,6 @@
                     </div>
                 </div>
 
-                <!-- CONTEÚDO: EDITAR PERFIL -->
                 <div id="tab-m-perfil" class="tab-content-membro hidden">
                     <div class="card">
                         <h3>👤 Atualizar meus Dados</h3>
@@ -157,7 +157,6 @@
                     </div>
                 </div>
 
-                <!-- CONTEÚDO: IGREJA OU LISTA DE MEMBROS (RESTO DO CÓDIGO MANTIDO) -->
                 <div id="tab-m-igreja" class="tab-content-membro hidden">
                     <div class="card">
                         <h3>💬 GRUPOS & DEPARTAMENTOS</h3>
@@ -175,15 +174,86 @@
             </div>
         </section>
 
-        <!-- PAINEL ADM E OUTROS ELEMENTOS (MANTIDOS IGUAIS) -->
-        <!-- ... (o restante do seu código ADM e Modais permanece igual) ... -->
+        <section id="admin-dashboard" class="screen hidden">
+            <header class="app-bar">
+                <h2>Painel ADM</h2>
+                <button onclick="location.reload()">Sair</button>
+            </header>
+            <div class="tabs">
+                <button id="btn-tab-pendentes" class="active" onclick="switchTab('pendentes')">Pendentes</button>
+                <button id="btn-tab-membros" onclick="switchTab('membros')">Membros</button>
+                <button id="btn-tab-mural" onclick="switchTab('mural')">Mural</button>
+                <button id="btn-tab-gestao" onclick="switchTab('gestao')">Gestão</button>
+            </div>
+            <div class="scroll-content">
+                <div id="tab-pendentes" class="tab-content">
+                    <h3>Aprovações Pendentes</h3>
+                    <div id="pending-list"></div>
+                </div>
+                <div id="tab-membros" class="tab-content hidden">
+                    <h3>Membros Cadastrados</h3>
+                    <ul id="lista-pessoas-aprovadas"></ul>
+                </div>
+                <div id="tab-mural" class="tab-content hidden">
+                    <h3>Postar no Mural</h3>
+                    <textarea id="texto-aviso" placeholder="Escreva o aviso aqui..."></textarea>
+                    <input type="file" id="upload-midia" accept="image/*">
+                    <button class="btn btn-save" onclick="enviarAviso()">POSTAR AGORA</button>
+                    <button class="btn-text" onclick="limparMural()" style="color:red;">Limpar Mural</button>
+                </div>
+                <div id="tab-gestao" class="tab-content hidden">
+                    <h3>Configurar Grupos e Deptos</h3>
+                    <select id="gestao-tipo">
+                        <option value="zap">Link de WhatsApp</option>
+                        <option value="depto">Texto Departamento</option>
+                    </select>
+                    <input type="text" id="gestao-nome" placeholder="Nome (Ex: Grupo de Louvor)">
+                    <input type="text" id="gestao-info" placeholder="Link ou Descrição">
+                    <button class="btn btn-save" onclick="salvarGestao()">SALVAR ITEM</button>
+
+                    <div style="margin-top: 30px; border-top: 2px solid #eee; padding-top: 20px;">
+                        <h4 style="color: var(--primary); margin-bottom: 10px;">Itens Ativos (Clique em 🗑️ para apagar)</h4>
+                        <div id="lista-gestao-adm"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div id="modal-edicao" class="modal hidden">
+            <div class="modal-content card">
+                <h3>Editar Membro</h3>
+                <input type="hidden" id="edit-membro-id">
+                
+                <label>Nome:</label>
+                <input type="text" id="input-edit-nome" placeholder="Nome Completo">
+                
+                <label>Cargo:</label>
+                <select id="input-edit-cargo">
+                    <option value="Membro">Membro</option>
+                    <option value="Cooperador(a)">Cooperador(a)</option>
+                    <option value="Diácono/Diaconisa">Diácono/Diaconisa</option>
+                    <option value="Evangelista">Evangelista</option>
+                    <option value="Missionária">Missionária</option>
+                    <option value="Obreiro(a)">Obreiro(a)</option>
+                    <option value="Pastor(a)">Pastor(a)</option>
+                    <option value="Presbítero">Presbítero</option>
+                </select>
+
+                <label>Validade (Ano):</label>
+                <input type="number" id="input-edit-validade" placeholder="Ex: 2028">
+
+                <div class="button-group-modal">
+                    <button class="btn-save" onclick="salvarEdicaoMembro()">SALVAR</button>
+                    <button class="btn-text" onclick="fecharModalEdicao()">CANCELAR</button>
+                </div>
+            </div>
+        </div>
 
     </div>
 
-    <!-- Firebase e Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, onValue, set, remove, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, push, onValue, set, remove, get, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
         const firebaseConfig = {
             apiKey: "AIzaSyC2UX5FRLvbmlv7KJoKuuFMDsB03T7zgK4",
             authDomain: "comunidade-pai-de-multidao.firebaseapp.com",
@@ -195,7 +265,7 @@
         };
         const app = initializeApp(firebaseConfig);
         window.db = getDatabase(app);
-        window.dbRefs = { ref, push, onValue, set, remove, get }; 
+        window.dbRefs = { ref, push, onValue, set, remove, get, update }; 
     </script>
     <script src="script.js"></script>
 </body>

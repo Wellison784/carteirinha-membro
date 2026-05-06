@@ -1,12 +1,17 @@
-// --- 1. FUNÇÕES DE NAVEGAÇÃO ---
+// --- 1. NAVEGAÇÃO ---
 window.showScreen = function(id) {
+    console.log("Tentando abrir a tela:", id);
     const screens = document.querySelectorAll('.screen');
-    screens.forEach(s => s.classList.add('hidden'));
     const target = document.getElementById(id);
-    if (target) {
-        target.classList.remove('hidden');
-        window.scrollTo(0, 0);
+    
+    if (!target) {
+        alert("ERRO CRÍTICO: Você tentou abrir a tela '" + id + "', mas esse ID não existe no seu HTML!");
+        return;
     }
+
+    screens.forEach(s => s.classList.add('hidden'));
+    target.classList.remove('hidden');
+    window.scrollTo(0, 0);
 };
 
 window.switchTab = function(tab) {
@@ -16,6 +21,15 @@ window.switchTab = function(tab) {
     
     document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
     const targetBtn = document.getElementById('btn-tab-' + tab);
+    if (targetBtn) targetBtn.classList.add('active');
+};
+
+window.navegarMembro = function(abaId) {
+    document.querySelectorAll('.tab-content-membro').forEach(content => content.classList.add('hidden'));
+    document.querySelectorAll('.tabs-membro button').forEach(btn => btn.classList.remove('active'));
+    const targetContent = document.getElementById('tab-m-' + abaId);
+    const targetBtn = document.getElementById('btn-m-' + abaId);
+    if (targetContent) targetContent.classList.remove('hidden');
     if (targetBtn) targetBtn.classList.add('active');
 };
 
@@ -30,6 +44,7 @@ function inicializarApp() {
     if (!window.dbRefs) return;
     const { ref, onValue } = window.dbRefs;
 
+    // Membros Ativos
     onValue(ref(window.db, 'membros'), (snapshot) => {
         const data = snapshot.val();
         membrosAprovados = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
@@ -40,6 +55,7 @@ function inicializarApp() {
         }
     });
 
+    // Pendentes
     onValue(ref(window.db, 'pendentes'), (snapshot) => {
         const lista = document.getElementById('pending-list');
         if (!lista) return;
@@ -57,12 +73,14 @@ function inicializarApp() {
         }
     });
 
+    // Avisos
     onValue(ref(window.db, 'avisos'), (snapshot) => {
         const data = snapshot.val();
         avisosGerais = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })).reverse() : [];
         atualizarQuadroAvisos();
     });
 
+    // Gestão e Grupos
     onValue(ref(window.db, 'gestao'), (snapshot) => {
         const data = snapshot.val();
         itensGestao = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
@@ -70,84 +88,34 @@ function inicializarApp() {
     });
 }
 
-function atualizarInterfaceMembro(m) {
-    document.getElementById('welcome-nome').innerText = m.nome;
-    document.getElementById('card-nome').innerText = `${m.nome} ${m.sobrenome}`;
-    document.getElementById('card-cargo-display').innerText = m.cargo;
-    const validadeEl = document.getElementById('card-validade');
-    if (validadeEl) validadeEl.innerText = `${m.anoInicio || '2026'} - ${m.anoFim || '2028'}`;
-
-    // Foto na Carteirinha
-    const picCard = document.getElementById('card-foto-display');
-    // NOVA LINHA: Foto na área de Edição de Perfil
-    const picEdit = document.getElementById('edit-avatar-preview');
-
-    if (m.foto) {
-        const fotoUrl = `url(${m.foto})`;
-        // Atualiza carteirinha
-        picCard.style.backgroundImage = fotoUrl;
-        picCard.style.backgroundSize = 'cover';
-        picCard.style.backgroundPosition = 'center';
-
-        // NOVA LINHA: Atualiza área de edição
-        picEdit.style.backgroundImage = fotoUrl;
-        picEdit.style.backgroundSize = 'cover';
-        picEdit.style.backgroundPosition = 'center';
-        picEdit.innerHTML = '';
-    } else {
-        // Se não tiver foto, define um padrão ou limpa
-        picCard.style.backgroundImage = '';
-        picEdit.style.backgroundImage = '';
-        picEdit.innerHTML = '<span>+</span>';
-    }
-}
-
-// Função para atualizar a foto clicando direto na carteirinha
-window.atualizarFotoDireto = function(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const novaFotoBase64 = e.target.result;
-
-            // Atualiza a imagem na tela na hora
-            document.getElementById('card-foto-display').style.backgroundImage = `url(${novaFotoBase64})`;
-
-            // Salva no banco de dados
-            if (window.usuarioLogado && window.usuarioLogado.id) {
-                const { ref, set } = window.dbRefs;
-                set(ref(window.db, `membros/${window.usuarioLogado.id}/foto`), novaFotoBase64)
-                .then(() => alert("Foto atualizada com sucesso!"))
-                .catch(() => alert("Erro ao salvar foto no banco."));
-            }
-        };
-        reader.readAsDataURL(input.files[0]);
+// --- 4. LOGINS ---
+window.checkAdmin = function() {
+    const e = document.getElementById('admin-email')?.value.trim();
+    const p = document.getElementById('admin-pass')?.value;
+    
+    if (e === "wellison20111@gmail.com" && p === "291220") {
+        window.showScreen('admin-dashboard');
+    } else { 
+        alert('E-mail ou senha de administrador incorretos!'); 
     }
 };
 
-// --- 4. LOGINS E CADASTRO ---
 window.loginMembro = function() {
-    const e = document.getElementById('member-email').value.trim();
-    const p = document.getElementById('member-pass').value;
+    const e = document.getElementById('member-email')?.value.trim();
+    const p = document.getElementById('member-pass')?.value;
     const m = membrosAprovados.find(u => u.email === e && u.senha === p);
     if (m) {
         usuarioLogado = m;
         atualizarInterfaceMembro(m);
-        document.getElementById('edit-nome').value = m.nome;
-        document.getElementById('edit-tel').value = m.telefone;
+        if(document.getElementById('edit-nome')) document.getElementById('edit-nome').value = m.nome;
+        if(document.getElementById('edit-tel')) document.getElementById('edit-tel').value = m.telefone;
         window.showScreen('member-profile');
     } else {
-        alert('Acesso negado: E-mail/Senha incorretos ou aguardando aprovação.');
+        alert('Acesso negado: Dados incorretos ou cadastro pendente.');
     }
 };
 
-window.checkAdmin = function() {
-    const e = document.getElementById('admin-email').value.trim();
-    const p = document.getElementById('admin-pass').value;
-    if (e === "wellison20111@gmail.com" && p === "291220") {
-        window.showScreen('admin-dashboard');
-    } else { alert('Senha incorreta!'); }
-};
-
+// --- 5. CADASTRO ---
 document.addEventListener('submit', function(e) {
     if(e.target && e.target.id === 'registration-form'){
         e.preventDefault();
@@ -161,7 +129,6 @@ document.addEventListener('submit', function(e) {
             senha: document.getElementById('reg-pass').value,
             cargo: document.getElementById('reg-cargo').value,
             batizado: document.getElementById('reg-batizado').value,
-            dataBatismo: document.getElementById('reg-data-batismo').value || "Não informada",
             nascimento: document.getElementById('reg-nascimento').value,
             telefone: document.getElementById('reg-tel').value,
             foto: fotoPreview.length > 10 ? fotoPreview : "",
@@ -171,14 +138,14 @@ document.addEventListener('submit', function(e) {
         };
         
         window.dbRefs.push(window.dbRefs.ref(window.db, 'pendentes'), dados);
-        alert('Cadastro enviado! Aguarde aprovação.');
+        alert('Cadastro enviado para aprovação!');
         e.target.reset();
         document.getElementById('reg-avatar-preview').style.backgroundImage = "";
         window.showScreen('home-screen');
     }
 });
 
-// --- 5. FUNÇÕES ADM ---
+// --- 6. FUNÇÕES ADM (EDIÇÃO E REMOÇÃO DE MEMBROS) ---
 window.aprovarMembroFirebase = function(id) {
     const { ref, set, remove, get } = window.dbRefs;
     get(ref(window.db, `pendentes/${id}`)).then((snap) => {
@@ -193,41 +160,50 @@ window.aprovarMembroFirebase = function(id) {
 };
 
 window.removerMembro = function(id) {
-    if(confirm("Remover membro?")) window.dbRefs.remove(window.dbRefs.ref(window.db, `membros/${id}`));
+    if(confirm("Remover membro permanentemente?")) {
+        window.dbRefs.remove(window.dbRefs.ref(window.db, `membros/${id}`));
+    }
 };
 
 window.abrirModalEdicao = function(id) {
     const m = membrosAprovados.find(u => u.id === id);
     if (!m) return;
-    document.getElementById('edit-adm-id').value = id;
-    document.getElementById('edit-adm-nome').value = m.nome;
-    document.getElementById('edit-adm-cargo').value = m.cargo;
-    document.getElementById('edit-adm-ano-inicio').value = m.anoInicio || 2026;
-    document.getElementById('edit-adm-ano-fim').value = m.anoFim || 2028;
-    document.getElementById('modal-edit-membro').classList.remove('hidden');
+    
+    document.getElementById('edit-membro-id').value = id;
+    document.getElementById('input-edit-nome').value = m.nome;
+    document.getElementById('input-edit-cargo').value = m.cargo;
+    document.getElementById('input-edit-validade').value = m.anoFim || (new Date().getFullYear() + 2);
+    
+    document.getElementById('modal-edicao').classList.remove('hidden');
 };
 
 window.fecharModalEdicao = function() {
-    document.getElementById('modal-edit-membro').classList.add('hidden');
+    document.getElementById('modal-edicao').classList.add('hidden');
 };
 
-window.salvarEdicaoAdm = function() {
-    const id = document.getElementById('edit-adm-id').value;
-    const { ref, set } = window.dbRefs;
-    const novosDados = {
-        nome: document.getElementById('edit-adm-nome').value,
-        cargo: document.getElementById('edit-adm-cargo').value,
-        anoInicio: document.getElementById('edit-adm-ano-inicio').value,
-        anoFim: document.getElementById('edit-adm-ano-fim').value
-    };
-    Object.keys(novosDados).forEach(key => {
-        set(ref(window.db, `membros/${id}/${key}`), novosDados[key]);
+window.salvarEdicaoMembro = function() {
+    const id = document.getElementById('edit-membro-id').value;
+    const novoNome = document.getElementById('input-edit-nome').value;
+    const novoCargo = document.getElementById('input-edit-cargo').value;
+    const novaValidade = document.getElementById('input-edit-validade').value;
+
+    if (!novoNome) return alert("O nome não pode estar vazio.");
+
+    const { ref, update } = window.dbRefs;
+    update(ref(window.db, `membros/${id}`), {
+        nome: novoNome,
+        cargo: novoCargo,
+        anoFim: parseInt(novaValidade)
+    }).then(() => {
+        alert("Dados atualizados!");
+        fecharModalEdicao();
+    }).catch(err => {
+        console.error(err);
+        alert("Erro ao salvar.");
     });
-    alert("Atualizado!");
-    fecharModalEdicao();
 };
 
-// --- 6. AVISOS E GESTÃO ---
+// --- 7. MURAL E GESTÃO (DEPARTAMENTOS/GRUPOS) ---
 window.enviarAviso = function() {
     const texto = document.getElementById('texto-aviso').value;
     const midia = document.getElementById('upload-midia').files[0];
@@ -246,52 +222,115 @@ function salvarAviso(texto, midia) {
     document.getElementById('texto-aviso').value = "";
 }
 
+window.limparMural = function() {
+    if(confirm("Apagar todos os avisos?")) window.dbRefs.remove(window.dbRefs.ref(window.db, 'avisos'));
+};
+
 window.salvarGestao = function() {
     const tipo = document.getElementById('gestao-tipo').value;
     const nome = document.getElementById('gestao-nome').value;
     const info = document.getElementById('gestao-info').value;
     window.dbRefs.push(window.dbRefs.ref(window.db, 'gestao'), { tipo, nome, info });
     alert("Adicionado!");
+    document.getElementById('gestao-nome').value = "";
+    document.getElementById('gestao-info').value = "";
 };
 
-// --- 7. ATUALIZADORES DE TELA ---
+// --- NOVA FUNÇÃO: REMOVER DEPARTAMENTO OU GRUPO ---
+window.removerGestao = function(id) {
+    if(confirm("Deseja excluir este item permanentemente?")) {
+        const { ref, remove } = window.dbRefs;
+        remove(ref(window.db, `gestao/${id}`))
+            .then(() => alert("Item removido!"))
+            .catch((err) => alert("Erro ao remover: " + err));
+    }
+};
+
+// --- 8. ATUALIZADORES DE UI ---
+function atualizarInterfaceMembro(m) {
+    if(document.getElementById('welcome-nome')) document.getElementById('welcome-nome').innerText = m.nome;
+    if(document.getElementById('card-nome')) document.getElementById('card-nome').innerText = `${m.nome} ${m.sobrenome}`;
+    if(document.getElementById('card-cargo-display')) document.getElementById('card-cargo-display').innerText = m.cargo;
+    
+    if(document.getElementById('card-validade')) {
+        document.getElementById('card-validade').innerText = m.anoFim || (new Date().getFullYear() + 2);
+    }
+    
+    const picCard = document.getElementById('card-foto-display');
+    const picEdit = document.getElementById('edit-avatar-preview');
+    if (m.foto) {
+        const url = `url(${m.foto})`;
+        if(picCard) picCard.style.backgroundImage = url;
+        if(picEdit) { picEdit.style.backgroundImage = url; picEdit.innerHTML = ''; }
+    }
+}
+
+function atualizarListaPessoas() {
+    const listaAdm = document.getElementById('lista-pessoas-aprovadas');
+    if (listaAdm) {
+        listaAdm.innerHTML = membrosAprovados.map(m => `
+            <li class="card" style="display:flex; justify-content:space-between; align-items:center; padding:10px; margin-bottom:5px;">
+                <span>${m.nome} (${m.cargo})</span>
+                <div>
+                    <button onclick="abrirModalEdicao('${m.id}')">✏️</button>
+                    <button onclick="removerMembro('${m.id}')" style="color:red;">🗑️</button>
+                </div>
+            </li>`).join('');
+    }
+
+    const listaPublica = document.getElementById('ul-membros-comunidade');
+    if (listaPublica) {
+        listaPublica.innerHTML = membrosAprovados.map(m => `
+            <li style="padding:10px; border-bottom:1px solid #eee; display:flex; align-items:center; gap:10px;">
+                <div style="width:35px; height:35px; border-radius:50%; background-image:url(${m.foto || ''}); background-size:cover; background-position:center;"></div>
+                <div><strong>${m.nome}</strong><br><small>${m.cargo}</small></div>
+            </li>`).join('');
+    }
+}
+
 function atualizarQuadroAvisos() {
-    const html = avisosGerais.map(a => `
-        <div class="card aviso-item" style="margin-bottom:15px; padding:15px;">
-            <p style="white-space: pre-wrap;">${a.texto}</p>
-            ${a.midia ? `<img src="${a.midia}" style="max-width:100%; border-radius:10px; margin-top:10px;">` : ""}
-            <small style="display:block; margin-top:10px; color:#666;">${a.data}</small>
+    const container = document.getElementById('quadro-avisos-membro');
+    if(!container) return;
+    container.innerHTML = avisosGerais.map(a => `
+        <div class="card" style="margin-bottom:15px; padding:15px;">
+            <p>${a.texto}</p>
+            ${a.midia ? `<img src="${a.midia}" style="max-width:100%; border-radius:10px;">` : ""}
+            <small>${a.data}</small>
         </div>`).join('');
-    if(document.getElementById('quadro-avisos-membro')) document.getElementById('quadro-avisos-membro').innerHTML = html;
 }
 
 function atualizarAreaMembroGestao() {
     const dL = document.getElementById('lista-deptos-membro');
     const zL = document.getElementById('lista-zaps-membro');
-    if(dL) dL.innerHTML = ""; if(zL) zL.innerHTML = "";
+    const listaGestaoAdm = document.getElementById('lista-gestao-adm'); // Para o administrador apagar
+
+    if(dL) dL.innerHTML = ""; 
+    if(zL) zL.innerHTML = "";
+    if(listaGestaoAdm) listaGestaoAdm.innerHTML = "";
+
     itensGestao.forEach(i => {
+        // Renderiza para o Membro
         if (i.tipo === 'depto') {
             if(dL) dL.innerHTML += `<div class="card"><strong>${i.nome}</strong><p>${i.info}</p></div>`;
         } else {
-            if(zL) zL.innerHTML += `<a href="${i.info}" target="_blank" class="btn btn-member" style="background:#25d366; text-decoration:none; display:block; text-align:center; margin-bottom:10px;">🟢 Grupo: ${i.nome}</a>`;
+            if(zL) zL.innerHTML += `<a href="${i.info}" target="_blank" class="btn-member" style="display:block; background:#25d366; color:white; text-align:center; padding:10px; margin-bottom:5px; text-decoration:none; border-radius:5px;">🟢 Grupo: ${i.nome}</a>`;
+        }
+
+        // Renderiza para o Administrador (com lixeira)
+        if(listaGestaoAdm) {
+            listaGestaoAdm.innerHTML += `
+                <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:10px; margin-bottom:5px;">
+                    <div>
+                        <strong>${i.tipo === 'depto' ? '🏢' : '🔗'} ${i.nome}</strong>
+                    </div>
+                    <button onclick="removerGestao('${i.id}')" style="background:none; border:none; color:red; cursor:pointer; font-size:1.2rem;">🗑️</button>
+                </div>
+            `;
         }
     });
 }
 
-function atualizarListaPessoas() {
-    const lista = document.getElementById('lista-pessoas-aprovadas');
-    if (lista) {
-        lista.innerHTML = membrosAprovados.map(m => `
-            <li class="card" style="display:flex; justify-content:space-between; align-items:center; padding:10px; margin-bottom:5px;">
-                <span>${m.nome} (${m.cargo})</span>
-                <div>
-                    <button onclick="abrirModalEdicao('${m.id}')" style="background:none; border:none; cursor:pointer;">✏️</button>
-                    <button onclick="removerMembro('${m.id}')" style="color:red; background:none; border:none; cursor:pointer;">🗑️</button>
-                </div>
-            </li>`).join('');
-    }
-}
-
+// --- 9. FOTOS ---
 window.previewRegPhoto = function(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
@@ -304,136 +343,34 @@ window.previewRegPhoto = function(input) {
     }
 };
 
-// --- 8. FUNÇÃO PARA O PRÓPRIO MEMBRO EDITAR SEU PERFIL ---
-window.salvarAlteracoesPerfil = function() {
-    if (!usuarioLogado || !usuarioLogado.id) {
-        alert("Erro: Usuário não identificado.");
-        return;
-    }
-
-    const novoNome = document.getElementById('edit-nome').value.trim();
-    const novoTel = document.getElementById('edit-tel').value.trim();
-    
-    // PEGA A FOTO DA PRÉ-VISUALIZAÇÃO
-    let fotoPreview = document.getElementById('edit-avatar-preview').style.backgroundImage;
-    // Limpa a string da URL para pegar apenas o Base64
-    fotoPreview = fotoPreview.replace('url("', '').replace('")', '');
-
-    if (novoNome === "") {
-        alert("O nome não pode estar vazio.");
-        return;
-    }
-
-    const { ref, set } = window.dbRefs;
-    
-    // Mostra um aviso de carregando (opcional)
-    console.log("Salvando alterações...");
-
-    // Atualiza Nome, Telefone e FOTO
-    set(ref(window.db, `membros/${usuarioLogado.id}/nome`), novoNome)
-        .then(() => {
-            return set(ref(window.db, `membros/${usuarioLogado.id}/telefone`), novoTel);
-        })
-        .then(() => {
-            // SALVA A FOTO NO BANCO
-            if (fotoPreview.length > 10) {
-                return set(ref(window.db, `membros/${usuarioLogado.id}/foto`), fotoPreview);
-            }
-        })
-        .then(() => {
-            alert("Perfil atualizado com sucesso!");
-        })
-        .catch((error) => {
-            console.error("Erro ao salvar:", error);
-            alert("Erro ao salvar alterações.");
-        });
-};
-// --- FUNÇÃO PARA LIMPAR O MURAL (ADICIONE NO FINAL DO ARQUIVO) ---
-window.limparMural = function() {
-    // Pergunta para evitar apagar sem querer
-    if(confirm("Deseja realmente apagar TODOS os avisos do mural? Esta ação não pode ser desfeita.")) {
-        const { ref, remove } = window.dbRefs;
-        
-        // Acessa o caminho 'avisos' no seu Firebase e deleta tudo o que estiver lá
-        remove(ref(window.db, 'avisos'))
-            .then(() => {
-                alert("Mural limpo com sucesso!");
-                // O quadro de avisos vai sumir automaticamente para os membros 
-                // por causa do onValue que já está no seu código.
-            })
-            .catch((error) => {
-                console.error("Erro ao limpar mural:", error);
-                alert("Erro ao tentar limpar o mural.");
-            });
-    }
-};
-
-// --- 1. FUNÇÃO DE NAVEGAÇÃO DO PORTAL DO MEMBRO ---
-window.navegarMembro = function(abaId) {
-    // Esconde todos os conteúdos das abas do membro
-    document.querySelectorAll('.tab-content-membro').forEach(content => {
-        content.classList.add('hidden');
-    });
-    
-    // Remove o 'active' de todos os botões do membro
-    document.querySelectorAll('.tabs-membro button').forEach(btn => {
-        btn.classList.remove('active');
-    });
-
-    // Mostra o selecionado
-    const targetContent = document.getElementById('tab-m-' + abaId);
-    const targetBtn = document.getElementById('btn-m-' + abaId);
-    
-    if (targetContent) targetContent.classList.remove('hidden');
-    if (targetBtn) targetBtn.classList.add('active');
-};
-
-// --- AJUSTE NA FUNÇÃO DE ATUALIZAR LISTA (Para preencher o portal do membro também) ---
-function atualizarListaPessoas() {
-    const listaAdm = document.getElementById('lista-pessoas-aprovadas');
-    const listaPublica = document.getElementById('ul-membros-comunidade'); // Nova lista no portal
-    
-    const htmlMembros = membrosAprovados.map(m => `
-        <li class="card" style="display:flex; justify-content:space-between; align-items:center; padding:10px; margin-bottom:5px;">
-            <span>${m.nome} (${m.cargo})</span>
-            <div>
-                <button onclick="abrirModalEdicao('${m.id}')" style="background:none; border:none; cursor:pointer;">✏️</button>
-                <button onclick="removerMembro('${m.id}')" style="color:red; background:none; border:none; cursor:pointer;">🗑️</button>
-            </div>
-        </li>`).join('');
-
-    const htmlPublico = membrosAprovados.map(m => `
-        <li style="padding: 10px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px;">
-            <div style="width: 35px; height: 35px; border-radius: 50%; background-color: #ddd; background-image: url(${m.foto || ''}); background-size: cover;"></div>
-            <div>
-                <strong style="display: block; font-size: 0.9rem;">${m.nome} ${m.sobrenome}</strong>
-                <small style="color: #666;">${m.cargo}</small>
-            </div>
-        </li>`).join('');
-
-    if (listaAdm) listaAdm.innerHTML = htmlMembros;
-    if (listaPublica) listaPublica.innerHTML = htmlPublico;
-}
-
-// [Mantenha todas as outras funções: loginMembro, checkAdmin, salvarAlteracoesPerfil, enviarAviso, etc., exatamente como estão no seu original]
-
-// --- NOVA FUNÇÃO: Pré-visualização da foto na edição de perfil ---
 window.previewEditPhoto = function(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
-        reader.onload = function(e) {
-            // Atualiza a pré-visualização na área de edição
-            const preview = document.getElementById('edit-avatar-preview');
-            preview.style.backgroundImage = `url(${e.target.result})`;
-            preview.innerHTML = ''; // Remove o conteúdo anterior
+        reader.onload = (e) => {
+            document.getElementById('edit-avatar-preview').style.backgroundImage = `url(${e.target.result})`;
         };
         reader.readAsDataURL(input.files[0]);
     }
 };
+
+window.salvarAlteracoesPerfil = function() {
+    if (!usuarioLogado) return;
+    const n = document.getElementById('edit-nome').value;
+    const t = document.getElementById('edit-tel').value;
+    let f = document.getElementById('edit-avatar-preview').style.backgroundImage;
+    f = f.replace('url("', '').replace('")', '');
+
+    const { ref, update } = window.dbRefs;
+    update(ref(window.db, `membros/${usuarioLogado.id}`), {
+        nome: n, telefone: t, foto: f.length > 10 ? f : usuarioLogado.foto
+    }).then(() => alert("Perfil Salvo!"));
+};
+
+// --- 10. INICIALIZAÇÃO ---
 const checkDb = setInterval(() => { 
     if (window.db && window.dbRefs) { inicializarApp(); clearInterval(checkDb); } 
 }, 500);
-// --- SERVICE WORKER (PARA PWA/OFFLINE) ---
+
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(err => console.log('Erro SW:', err));
