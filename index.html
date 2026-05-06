@@ -1,9 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
     <meta charset="UTF-8">
-    <!-- Ajuste de viewport para evitar zoom indesejado em alguns celulares -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Comunidade Pai de Multidão</title>
     <link rel="stylesheet" href="style.css">
@@ -11,7 +9,6 @@
     <meta name="theme-color" content="#004a99">
     <link rel="shortcut icon" href="logo.jpeg" type="image/x-icon">
 </head>
-
 <body>
     <div id="app">
         <!-- TELA INICIAL -->
@@ -27,64 +24,60 @@
             </div>
         </section>
 
-        <!-- FORMULÁRIO DE CADASTRO COMPLETO -->
+        <!-- FORMULÁRIO DE CADASTRO -->
         <section id="register-screen" class="screen hidden">
             <header class="app-bar">
                 <button onclick="showScreen('member-login-screen')">←</button>
                 <h2>Novo Cadastro</h2>
             </header>
-
             <form id="registration-form" class="scroll-content">
                 <div class="card">
                     <h3>1. Foto de Perfil</h3>
                     <div class="photo-upload">
-                        <!-- Preview da Foto -->
                         <div id="reg-avatar-preview" class="avatar-circle"><span>+</span></div>
-                        <!-- Botão que dispara o seletor -->
                         <label for="reg-foto-input" class="btn-photo">Selecionar Foto</label>
-                        <!-- O Input corrigido aqui -->
-                        <input type="file" id="reg-foto-input" accept="image/*"
-                            onchange="previewRegPhoto(this)" style="display:none;">
+                        <input type="file" id="reg-foto-input" accept="image/*" onchange="previewRegPhoto(this)" style="display:none;">
                     </div>
                 </div>
-
                 <div class="card">
                     <h3>2. Dados de Acesso</h3>
-                    <input type="email" id="reg-email" autocomplete="username" placeholder="Seu melhor E-mail" required>
-                    <input type="password" id="reg-pass" autocomplete="new-password" placeholder="Crie uma Senha"
-                        required>
+                    <input type="email" id="reg-email" placeholder="Seu melhor E-mail" required autocomplete="email">
+                    <input type="password" id="reg-pass" placeholder="Crie uma Senha" required autocomplete="new-password">
                 </div>
-
                 <div class="card">
                     <h3>3. Dados Pessoais</h3>
-                    <input type="text" id="reg-nome" placeholder="Nome" required>
-                    <input type="text" id="reg-sobrenome" placeholder="Sobrenome" required>
-                    <input type="tel" id="reg-tel" placeholder="WhatsApp (com DDD)" required>
+                    <input type="text" id="reg-nome" placeholder="Nome" required autocomplete="given-name">
+                    <input type="text" id="reg-sobrenome" placeholder="Sobrenome" required autocomplete="family-name">
+                    <input type="tel" id="reg-tel" placeholder="WhatsApp" required autocomplete="tel">
                     <label>Data de Nascimento:</label>
                     <input type="date" id="reg-nascimento" required>
                 </div>
-
                 <div class="card">
                     <h3>4. Vida Eclesiástica</h3>
+                    <label style="font-size: 0.8rem; color: #666; display:block;">Cargo/Função:</label>
                     <select id="reg-cargo">
-                        <option value="Pastor(a)">Pastor(a)</option>
-                        <option value="Evangelista">Evangelista</option>
-                        <option value="Presbítero">Presbítero</option>
-                        <option value="Missionária">Missionária</option>
-                        <option value="Diácono/Diaconisa">Diácono/Diaconisa</option>
-                        <option value="Cooperador(a)">Cooperador(a)</option>
-                        <option value="Obreiro(a)">Obreiro(a)</option>
                         <option value="Membro">Membro</option>
+                        <option value="Cooperador(a)">Cooperador(a)</option>
+                        <option value="Diácono/Diaconisa">Diácono/Diaconisa</option>
+                        <option value="Evangelista">Evangelista</option>
+                        <option value="Missionária">Missionária</option>
+                        <option value="Obreiro(a)">Obreiro(a)</option>
+                        <option value="Pastor(a)">Pastor(a)</option>
+                        <option value="Presbítero">Presbítero</option>
                     </select>
-                    <label>É Batizado nas Águas?</label>
+                    
+                    <label style="font-size: 0.8rem; color: #666; margin-top:10px; display:block;">Já é batizado nas águas?</label>
                     <select id="reg-batizado">
-                        <option value="Sim">Sim</option>
-                        <option value="Não">Não</option>
+                        <option value="Sim">Sim, sou batizado</option>
+                        <option value="Não">Não sou batizado</option>
                     </select>
-                    <label>Data do Batismo (se souber):</label>
+                    
+                    <label style="font-size: 0.8rem; color: #666; margin-top:10px; display:block;">Data do Batismo (se houver):</label>
                     <input type="date" id="reg-data-batismo">
                 </div>
-                <button type="submit" class="btn-save" style="width: 100%; margin-top: 20px;">SOLICITAR ACESSO</button>
+                <div style="padding: 0 15px 30px 15px;">
+                    <button type="submit" class="btn-save" style="background: #2ecc71;">SOLICITAR ACESSO</button>
+                </div>
             </form>
         </section>
 
@@ -95,44 +88,80 @@
                 <h2>Acesso Membro</h2>
             </header>
             <form onsubmit="event.preventDefault(); loginMembro();" class="card" style="margin-top: 20px;">
-                <input type="email" id="member-email" autocomplete="username" placeholder="Seu E-mail" required>
-                <input type="password" id="member-pass" autocomplete="current-password" placeholder="Sua Senha"
-                    required>
+                <input type="email" id="member-email" placeholder="Seu E-mail" required autocomplete="username">
+                <input type="password" id="member-pass" placeholder="Sua Senha" required autocomplete="current-password">
                 <button type="submit" class="btn btn-member">ENTRAR</button>
                 <button type="button" class="btn-text" onclick="showScreen('register-screen')">Criar minha conta</button>
             </form>
         </section>
 
-        <!-- PERFIL/CARTEIRINHA DO MEMBRO -->
+        <!-- PERFIL DO MEMBRO (PORTAL COM ABAS) -->
         <section id="member-profile" class="screen hidden">
-            <header class="app-bar profile-header">
-                <div class="header-info">
-                    <div id="card-foto-display" class="avatar-small"
-                        onclick="document.getElementById('input-change-photo').click()"
-                        style="cursor: pointer; border: 2px solid white;" title="Clique para mudar a foto"></div>
-                    <input type="file" id="input-change-photo" style="display:none" accept="image/*"
-                        onchange="alterarFotoPerfil(this)">
-                    <div class="user-details">
-                        <h2 id="card-nome">...</h2>
-                        <span id="card-status" class="badge-status">ATIVO</span>
-                        <p id="card-cargo-display">...</p>
-                    </div>
-                </div>
-                <button onclick="location.reload()" class="btn-exit">Sair</button>
+            <header class="app-bar">
+                <h2>Olá, <span id="welcome-nome">...</span></h2>
+                <button onclick="location.reload()">Sair</button>
             </header>
 
+            <!-- MENU DE NAVEGAÇÃO DO MEMBRO -->
+            <div class="tabs-membro">
+                <button id="btn-m-carteirinha" class="active" onclick="navegarMembro('carteirinha')">Carteirinha</button>
+                <button id="btn-m-perfil" onclick="navegarMembro('perfil')">Meu Perfil</button>
+                <button id="btn-m-igreja" onclick="navegarMembro('igreja')">Igreja</button>
+                <button id="btn-m-membros" onclick="navegarMembro('lista-membros')">Membros</button>
+            </div>
+
             <div class="scroll-content">
-                <div class="section-container">
-                    <div class="section-title">🏛️ DEPARTAMENTOS</div>
-                    <div id="lista-deptos-membro" class="grid-container"></div>
+                <!-- CONTEÚDO: CARTEIRINHA -->
+                <div id="tab-m-carteirinha" class="tab-content-membro">
+                    <div class="card">
+                        <h3>🏛️ Carteirinha Digital</h3>
+                        <div class="carteirinha-digital">
+                            <div class="carteirinha-header">
+                                <img src="logo.jpeg" alt="Logo" class="mini-logo-card">
+                                <h3>COMUNIDADE PAI DE MULTIDÃO</h3>
+                            </div>
+                            <div class="carteirinha-body">
+                                <div id="card-foto-display" class="foto-perfil-card"></div>
+                                <div class="info-membro">
+                                    <p>NOME: <span id="card-nome">...</span></p>
+                                    <p>CARGO: <span id="card-cargo-display">...</span></p>
+                                    <p>STATUS: <span id="card-status" class="status-ativo">ATIVO</span></p>
+                                    <p>VALIDADE: <span id="card-validade" style="color: #ffd700; font-weight: bold;">...</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>📢 QUADRO DE AVISOS</h3>
+                        <div id="quadro-avisos-membro"></div>
+                    </div>
                 </div>
-                <div class="section-container">
-                    <div class="section-title">💬 GRUPOS WHATSAPP</div>
-                    <div id="lista-zaps-membro"></div>
+
+                <!-- CONTEÚDO: EDITAR PERFIL -->
+                <div id="tab-m-perfil" class="tab-content-membro hidden">
+                    <div class="card">
+                        <h3>👤 Atualizar meus Dados</h3>
+                        <input type="text" id="edit-nome" placeholder="Seu Nome">
+                        <input type="tel" id="edit-tel" placeholder="WhatsApp">
+                        <button class="btn btn-save" onclick="salvarAlteracoesPerfil()">SALVAR ALTERAÇÕES</button>
+                    </div>
                 </div>
-                <div class="section-container">
-                    <div class="section-title">📢 MURAL DE AVISOS</div>
-                    <div id="quadro-avisos-membro"></div>
+
+                <!-- CONTEÚDO: IGREJA -->
+                <div id="tab-m-igreja" class="tab-content-membro hidden">
+                    <div class="card">
+                        <h3>💬 GRUPOS & DEPARTAMENTOS</h3>
+                        <div id="lista-zaps-membro"></div>
+                        <div id="lista-deptos-membro" style="margin-top: 15px;"></div>
+                    </div>
+                </div>
+
+                <!-- CONTEÚDO: LISTA DE MEMBROS -->
+                <div id="tab-m-lista-membros" class="tab-content-membro hidden">
+                    <div class="card">
+                        <h3>👥 Nossa Família</h3>
+                        <ul id="ul-membros-comunidade" style="list-style: none; margin-top: 10px;"></ul>
+                    </div>
                 </div>
             </div>
         </section>
@@ -144,13 +173,13 @@
                 <h2>Área Restrita ADM</h2>
             </header>
             <form onsubmit="event.preventDefault(); checkAdmin();" class="card" style="margin-top: 20px;">
-                <input type="email" id="admin-email" autocomplete="username" placeholder="E-mail ADM" required>
-                <input type="password" id="admin-pass" autocomplete="current-password" placeholder="Senha ADM" required>
+                <input type="email" id="admin-email" placeholder="E-mail ADM" required autocomplete="username">
+                <input type="password" id="admin-pass" placeholder="Senha ADM" required autocomplete="current-password">
                 <button type="submit" class="btn btn-admin">ACESSAR PAINEL</button>
             </form>
         </section>
 
-        <!-- PAINEL ADM COMPLETO -->
+        <!-- PAINEL ADM -->
         <section id="admin-dashboard" class="screen hidden">
             <header class="app-bar">
                 <h2>Painel Pastoral</h2>
@@ -161,49 +190,68 @@
                 <button id="btn-tab-avisos" onclick="switchTab('avisos')">Avisos</button>
                 <button id="btn-tab-gestao" onclick="switchTab('gestao')">Gestão</button>
             </div>
-
             <div class="scroll-content">
                 <div id="tab-membros" class="tab-content">
-                    <h4>Novas Solicitações:</h4>
+                    <h4>Solicitações Pendentes:</h4>
                     <div id="pending-list"></div>
                     <hr>
                     <h4>Membros Ativos:</h4>
-                    <ul id="lista-pessoas-aprovadas"></ul>
+                    <ul id="lista-pessoas-aprovadas" style="list-style:none;"></ul>
                 </div>
-
                 <div id="tab-avisos" class="tab-content hidden">
                     <div class="card">
-                        <h3>Novo Aviso</h3>
-                        <textarea id="texto-aviso" placeholder="Escreva a mensagem aqui..."></textarea>
-                        <label>Incluir Imagem/Banner:</label>
+                        <textarea id="texto-aviso" placeholder="Nova mensagem..."></textarea>
                         <input type="file" id="upload-midia" accept="image/*">
-                        <button class="btn btn-save" onclick="enviarAviso()">PUBLICAR NO MURAL</button>
+                        <button class="btn btn-save" onclick="enviarAviso()">PUBLiCAR</button>
+                        <button class="btn-text" onclick="limparMural()" style="color: #e74c3c; margin-top: 10px; width: 100%; font-weight: bold;">🗑️ LIMPAR TODO O MURAL</button>
                     </div>
                     <div id="lista-avisos-adm"></div>
                 </div>
-
                 <div id="tab-gestao" class="tab-content hidden">
                     <div class="card">
-                        <h3>Cadastrar Depto ou Grupo</h3>
-                        <select id="gestao-tipo">
-                            <option value="depto">Departamento</option>
-                            <option value="whatsapp">Link de WhatsApp</option>
-                        </select>
-                        <input type="text" id="gestao-nome" placeholder="Nome (Ex: Varões / Grupo de Louvor)">
-                        <input type="text" id="gestao-info" placeholder="Info ou Link do WhatsApp">
+                        <select id="gestao-tipo"><option value="depto">Departamento</option><option value="whatsapp">WhatsApp</option></select>
+                        <input type="text" id="gestao-nome" placeholder="Nome">
+                        <input type="text" id="gestao-info" placeholder="Link ou Descrição">
                         <button class="btn btn-save" onclick="salvarGestao()">ADICIONAR</button>
                     </div>
                     <div id="admin-gestao-list"></div>
                 </div>
             </div>
         </section>
+
+        <!-- MODAL DE EDIÇÃO ADM -->
+        <div id="modal-edit-membro" class="modal-overlay hidden">
+            <div class="card modal-box">
+                <h3>Editar Membro</h3>
+                <input type="hidden" id="edit-adm-id">
+                <label>Nome:</label>
+                <input type="text" id="edit-adm-nome">
+                <label>Cargo:</label>
+                <select id="edit-adm-cargo">
+                    <option value="Membro">Membro</option>
+                    <option value="Cooperador(a)">Cooperador(a)</option>
+                    <option value="Diácono/Diaconisa">Diácono/Diaconisa</option>
+                    <option value="Evangelista">Evangelista</option>
+                    <option value="Missionária">Missionária</option>
+                    <option value="Obreiro(a)">Obreiro(a)</option>
+                    <option value="Pastor(a)">Pastor(a)</option>
+                    <option value="Presbítero">Presbítero</option>
+                </select>
+                <label>Validade da Carteirinha:</label>
+                <div style="display:flex; gap:10px;">
+                    <input type="number" id="edit-adm-ano-inicio" placeholder="De">
+                    <input type="number" id="edit-adm-ano-fim" placeholder="Até">
+                </div>
+                <button class="btn-save" onclick="salvarEdicaoAdm()">SALVAR MUDANÇAS</button>
+                <button class="btn-text" onclick="fecharModalEdicao()">Cancelar</button>
+            </div>
+        </div>
     </div>
 
-    <!-- Firebase e Inicialização do Banco -->
+    <!-- Firebase e Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, push, onValue, set, remove, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
         const firebaseConfig = {
             apiKey: "AIzaSyC2UX5FRLvbmlv7KJoKuuFMDsB03T7zgK4",
             authDomain: "comunidade-pai-de-multidao.firebaseapp.com",
@@ -213,12 +261,10 @@
             messagingSenderId: "745360276491",
             appId: "1:745360276491:web:ba9a6f61ae3ffcd17ddb0e"
         };
-
         const app = initializeApp(firebaseConfig);
         window.db = getDatabase(app);
         window.dbRefs = { ref, push, onValue, set, remove, get }; 
     </script>
-
     <script src="script.js"></script>
 </body>
 </html>

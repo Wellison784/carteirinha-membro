@@ -1,244 +1,91 @@
 :root {
     --primary: #004a99;
+    --primary-dark: #002d5f;
     --secondary: #e67e22;
     --bg: #f4f7f6;
-    --text: #333;
     --white: #ffffff;
     --success: #2ecc71;
-    --danger: #e74c3c;
+    --card-shadow: 0 4px 15px rgba(0,0,0,0.05);
 }
 
-* { 
-    box-sizing: border-box; 
-    margin: 0; 
-    padding: 0; 
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+body { background: var(--bg); color: #333; }
 
-body { 
-    background-color: var(--bg); 
-    color: var(--text); 
-    line-height: 1.6;
-}
-
-.screen { 
-    min-height: 100vh; 
-    display: flex; 
-    flex-direction: column; 
-    width: 100%; /* Garante preenchimento total */
-    max-width: 500px; 
-    margin: 0 auto;
-    background: var(--bg);
-}
-
+.screen { min-height: 100vh; width: 100%; max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; }
 .hidden { display: none !important; }
 
-/* --- LOGO STYLES --- */
+/* Botões e Cards */
+.card { background: var(--white); padding: 20px; border-radius: 15px; margin: 10px 20px; box-shadow: var(--card-shadow); }
+.btn { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; color: white; margin-bottom: 10px; }
+.btn-member { background: var(--secondary); }
+.btn-admin { background: var(--primary); }
+.btn-save { background: var(--success); width: 100%; padding: 12px; border-radius: 8px; border: none; color: white; font-weight: bold; cursor: pointer; }
+.btn-text { background: none; border: none; color: var(--primary); width: 100%; padding: 10px; cursor: pointer; }
+
+/* AppBar e Tabs */
+.app-bar { background: var(--white); padding: 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+.tabs { display: flex; background: white; border-bottom: 1px solid #eee;}
+.tabs button { flex: 1; padding: 15px; border: none; background: none; font-weight: bold; color: #888; border-bottom: 3px solid transparent; cursor: pointer; }
+.tabs button.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+/* Carteirinha Digital */
+.carteirinha-digital { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; border-radius: 15px; padding: 20px; box-shadow: 0 8px 20px rgba(0,74,153,0.3); }
+.carteirinha-header { display: flex; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 15px; }
+.mini-logo-card { width: 30px; height: 30px; margin-right: 10px; border-radius: 5px; }
+.carteirinha-body { display: flex; gap: 15px; align-items: center; }
+.foto-perfil-card { width: 90px; height: 110px; background: rgba(255,255,255,0.1); border: 2px solid white; border-radius: 8px; background-size: cover; background-position: center; }
+.info-membro p { font-size: 11px; margin-bottom: 5px; opacity: 0.9; }
+.info-membro span { display: block; font-size: 14px; font-weight: bold; text-transform: uppercase; }
+
+/* Modal */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.modal-box { width: 90%; max-width: 400px; margin: 0; }
+
+input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; }
+.avatar-circle { width: 100px; height: 100px; border-radius: 50%; background: #eee; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; background-size: cover; }
+/* Ajuste para a logo principal na tela inicial */
 .main-logo {
-    width: 100%;
-    max-width: 150px;
-    height: auto;
+    display: block;
+    margin: 20px auto; /* Centraliza e dá um respiro */
+    max-width: 200px;  /* Define uma largura máxima */
+    height: auto;      /* Mantém a proporção */
+    max-height: 30vh;  /* Garante que não ocupe mais de 30% da altura da tela */
     object-fit: contain;
 }
 
-.mini-logo {
-    width: 40px;
-    height: 40px;
-    object-fit: cover;
-    border-radius: 5px;
-    background: white;
-}
-
-/* --- HOME SCREEN --- */
-#home-screen { 
-    background: linear-gradient(to bottom, #fff 50%, var(--bg) 50%); 
-    text-align: center; 
-    padding: 20px; 
-}
-
-.hero { margin: 40px 0; }
-
-.logo-container { 
-    width: 130px; 
-    height: 130px; 
-    margin: 0 auto 20px; 
-    background: #fff; 
-    border-radius: 20px; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    overflow: hidden;
-}
-
-/* --- BOTÕES --- */
-.btn { 
-    width: 100%; 
-    padding: 15px; 
-    border: none; 
-    border-radius: 8px; 
-    font-weight: bold; 
-    margin-bottom: 15px; 
-    cursor: pointer; 
-    font-size: 16px; 
-    color: white; 
-    transition: transform 0.1s, filter 0.2s;
-}
-
-.btn:active { transform: translateY(2px); box-shadow: none !important; }
-
-.btn-member { background-color: var(--secondary); box-shadow: 0 4px #d35400; }
-.btn-admin { background-color: var(--primary); box-shadow: 0 4px #003366; }
-.btn-save { background-color: var(--success); box-shadow: 0 4px #27ae60; width: 100%; }
-
-.search-link { color: var(--primary); text-decoration: none; font-weight: bold; margin-top: 20px; display: inline-block; }
-
-/* --- APP BAR --- */
-.app-bar { 
-    background-color: var(--primary); 
-    color: white; 
-    padding: 15px; 
-    display: flex; 
-    align-items: center; 
-    gap: 15px; 
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-
-.app-bar h2 { font-size: 18px; flex: 1; }
-.app-bar button { background: none; border: none; color: white; font-size: 20px; cursor: pointer; }
-
-/* --- TABS (ABAS) --- */
-.tabs {
-    display: flex;
-    background: var(--white);
-    border-bottom: 1px solid #ddd;
-}
-
-.tabs button {
-    flex: 1;
-    padding: 12px;
-    border: none;
-    background: none;
-    font-weight: bold;
-    color: #666;
-    cursor: pointer;
-    border-bottom: 3px solid transparent;
-}
-
-.tabs button.active {
-    color: var(--primary);
-    border-bottom: 3px solid var(--primary);
-}
-
-/* --- FORMULÁRIOS E CARDS --- */
-.scroll-content { padding: 15px; overflow-y: auto; flex: 1; }
-
-.card { 
-    background: white; 
-    padding: 15px; 
-    border-radius: 10px; 
-    margin-bottom: 15px; 
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
-}
-
-.card h3, .card h4 { 
-    border-bottom: 1px solid #eee; 
-    padding-bottom: 8px; 
-    margin-bottom: 12px; 
-    font-size: 16px; 
-    color: var(--primary); 
-}
-
-input, select, textarea { 
-    width: 100%; 
-    padding: 12px; 
-    margin: 8px 0; 
-    border: 1px solid #ddd; 
-    border-radius: 6px; 
-    font-size: 14px;
-}
-
-textarea { height: 80px; resize: none; }
-
-/* --- FOTO UPLOAD --- */
-.photo-upload { text-align: center; margin-bottom: 20px; }
-.avatar-circle { 
-    width: 100px; 
-    height: 100px; 
-    background: #eee; 
-    border: 3px solid var(--primary);
-    border-radius: 50%; 
-    margin: 0 auto 10px; 
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-size: cover;
-    background-position: center;
-}
-
-.btn-photo {
-    display: inline-block;
-    padding: 8px 15px;
-    background: #eee;
-    border-radius: 20px;
-    font-size: 12px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-/* --- CARTEIRINHA DIGITAL --- */
-.carteirinha-digital {
-    background: linear-gradient(135deg, #004a99 0%, #002d5f 100%);
-    color: white;
-    border-radius: 15px;
+/* Centralizar o texto abaixo da logo */
+.hero {
+    text-align: center;
     padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-    position: relative;
-    overflow: hidden;
 }
-
-.carteirinha-header {
+/* --- ESTILO DAS ABAS DO PORTAL DO MEMBRO --- */
+.tabs-membro {
     display: flex;
-    align-items: center;
-    margin-bottom: 15px;
-    border-bottom: 1px solid rgba(255,255,255,0.2);
-    padding-bottom: 10px;
+    background: var(--primary); /* Usa o azul oficial do seu app */
+    overflow-x: auto;
+    border-bottom: 2px solid var(--primary-dark);
 }
 
-.mini-logo-card { width: 30px; height: 30px; margin-right: 10px; }
-.carteirinha-header h3 { font-size: 14px; letter-spacing: 1px; }
-
-.carteirinha-body { display: flex; gap: 15px; align-items: center; }
-
-/* AJUSTE AQUI: Foto da carteirinha com tamanho fixo e visível */
-.foto-perfil-card {
-    width: 90px;
-    height: 110px;
-    background-color: #ffffff;
-    background-image: none; /* O JS vai preencher isso */
-    border: 2px solid white;
-    border-radius: 8px;
-    background-size: cover;
-    background-position: center;
-    flex-shrink: 0; /* Impede de amassar a foto */
-    display: block;
+.tabs-membro button {
+    flex: 1;
+    padding: 15px 5px;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: 0.3s;
+    min-width: 90px;
 }
 
-.info-membro p { margin-bottom: 5px; font-size: 12px; }
-.info-membro span { display: block; font-size: 15px; font-weight: bold; text-transform: uppercase; }
-
-/* --- LISTAS E AVISOS --- */
-.member-list-simple { list-style: none; }
-.aviso-item {
-    background: #fff9f4;
-    border-left: 4px solid var(--secondary);
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 4px;
+.tabs-membro button.active {
+    color: #fff;
+    border-bottom: 4px solid var(--secondary); /* Linha laranja para destacar a ativa */
 }
 
-/* --- RODAPÉ --- */
-.footer-actions { padding: 20px; background: white; border-top: 1px solid #eee; }
+/* Garante que o conteúdo escondido não apareça */
+.tab-content-membro.hidden {
+    display: none !important;
+}
