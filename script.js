@@ -77,12 +77,52 @@ function atualizarInterfaceMembro(m) {
     const validadeEl = document.getElementById('card-validade');
     if (validadeEl) validadeEl.innerText = `${m.anoInicio || '2026'} - ${m.anoFim || '2028'}`;
 
-    const pic = document.getElementById('card-foto-display');
-    if (m.foto && pic) {
-        pic.style.backgroundImage = `url(${m.foto})`;
-        pic.style.backgroundSize = 'cover';
+    // Foto na Carteirinha
+    const picCard = document.getElementById('card-foto-display');
+    // NOVA LINHA: Foto na área de Edição de Perfil
+    const picEdit = document.getElementById('edit-avatar-preview');
+
+    if (m.foto) {
+        const fotoUrl = `url(${m.foto})`;
+        // Atualiza carteirinha
+        picCard.style.backgroundImage = fotoUrl;
+        picCard.style.backgroundSize = 'cover';
+        picCard.style.backgroundPosition = 'center';
+
+        // NOVA LINHA: Atualiza área de edição
+        picEdit.style.backgroundImage = fotoUrl;
+        picEdit.style.backgroundSize = 'cover';
+        picEdit.style.backgroundPosition = 'center';
+        picEdit.innerHTML = '';
+    } else {
+        // Se não tiver foto, define um padrão ou limpa
+        picCard.style.backgroundImage = '';
+        picEdit.style.backgroundImage = '';
+        picEdit.innerHTML = '<span>+</span>';
     }
 }
+
+// Função para atualizar a foto clicando direto na carteirinha
+window.atualizarFotoDireto = function(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const novaFotoBase64 = e.target.result;
+
+            // Atualiza a imagem na tela na hora
+            document.getElementById('card-foto-display').style.backgroundImage = `url(${novaFotoBase64})`;
+
+            // Salva no banco de dados
+            if (window.usuarioLogado && window.usuarioLogado.id) {
+                const { ref, set } = window.dbRefs;
+                set(ref(window.db, `membros/${window.usuarioLogado.id}/foto`), novaFotoBase64)
+                .then(() => alert("Foto atualizada com sucesso!"))
+                .catch(() => alert("Erro ao salvar foto no banco."));
+            }
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+};
 
 // --- 4. LOGINS E CADASTRO ---
 window.loginMembro = function() {
@@ -273,6 +313,11 @@ window.salvarAlteracoesPerfil = function() {
 
     const novoNome = document.getElementById('edit-nome').value.trim();
     const novoTel = document.getElementById('edit-tel').value.trim();
+    
+    // PEGA A FOTO DA PRÉ-VISUALIZAÇÃO
+    let fotoPreview = document.getElementById('edit-avatar-preview').style.backgroundImage;
+    // Limpa a string da URL para pegar apenas o Base64
+    fotoPreview = fotoPreview.replace('url("', '').replace('")', '');
 
     if (novoNome === "") {
         alert("O nome não pode estar vazio.");
@@ -281,25 +326,28 @@ window.salvarAlteracoesPerfil = function() {
 
     const { ref, set } = window.dbRefs;
     
-    // Referência direta ao caminho do membro no Firebase
-    const membroRef = ref(window.db, `membros/${usuarioLogado.id}`);
+    // Mostra um aviso de carregando (opcional)
+    console.log("Salvando alterações...");
 
-    // Atualizamos apenas o Nome e o Telefone para segurança
-    // Usamos set em caminhos específicos para não apagar o resto dos dados (como foto e cargo)
+    // Atualiza Nome, Telefone e FOTO
     set(ref(window.db, `membros/${usuarioLogado.id}/nome`), novoNome)
         .then(() => {
             return set(ref(window.db, `membros/${usuarioLogado.id}/telefone`), novoTel);
         })
         .then(() => {
-            alert("Dados atualizados com sucesso!");
-            // A interface vai atualizar sozinha graças ao onValue lá do inicializarApp()
+            // SALVA A FOTO NO BANCO
+            if (fotoPreview.length > 10) {
+                return set(ref(window.db, `membros/${usuarioLogado.id}/foto`), fotoPreview);
+            }
+        })
+        .then(() => {
+            alert("Perfil atualizado com sucesso!");
         })
         .catch((error) => {
             console.error("Erro ao salvar:", error);
             alert("Erro ao salvar alterações.");
         });
 };
-
 // --- FUNÇÃO PARA LIMPAR O MURAL (ADICIONE NO FINAL DO ARQUIVO) ---
 window.limparMural = function() {
     // Pergunta para evitar apagar sem querer
@@ -369,6 +417,19 @@ function atualizarListaPessoas() {
 
 // [Mantenha todas as outras funções: loginMembro, checkAdmin, salvarAlteracoesPerfil, enviarAviso, etc., exatamente como estão no seu original]
 
+// --- NOVA FUNÇÃO: Pré-visualização da foto na edição de perfil ---
+window.previewEditPhoto = function(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Atualiza a pré-visualização na área de edição
+            const preview = document.getElementById('edit-avatar-preview');
+            preview.style.backgroundImage = `url(${e.target.result})`;
+            preview.innerHTML = ''; // Remove o conteúdo anterior
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+};
 const checkDb = setInterval(() => { 
     if (window.db && window.dbRefs) { inicializarApp(); clearInterval(checkDb); } 
 }, 500);
