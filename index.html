@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Ajuste de viewport para evitar zoom indesejado em alguns celulares -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Comunidade Pai de Multidão</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
@@ -37,10 +38,13 @@
                 <div class="card">
                     <h3>1. Foto de Perfil</h3>
                     <div class="photo-upload">
-                        <div id="reg-avatar-preview" class="avatar-circle"></div>
-                        <label for="foto" class="btn-photo">Selecionar Foto</label>
-                        <input type="file" id="foto" accept="image/*"
-                            onchange="previewImage(this, 'reg-avatar-preview')" style="display:none;">
+                        <!-- Preview da Foto -->
+                        <div id="reg-avatar-preview" class="avatar-circle"><span>+</span></div>
+                        <!-- Botão que dispara o seletor -->
+                        <label for="reg-foto-input" class="btn-photo">Selecionar Foto</label>
+                        <!-- O Input corrigido aqui -->
+                        <input type="file" id="reg-foto-input" accept="image/*"
+                            onchange="previewRegPhoto(this)" style="display:none;">
                     </div>
                 </div>
 
@@ -86,7 +90,8 @@
 
         <!-- LOGIN MEMBRO -->
         <section id="member-login-screen" class="screen hidden">
-            <header class="app-bar"><button onclick="showScreen('home-screen')">←</button>
+            <header class="app-bar">
+                <button onclick="showScreen('home-screen')">←</button>
                 <h2>Acesso Membro</h2>
             </header>
             <form onsubmit="event.preventDefault(); loginMembro();" class="card" style="margin-top: 20px;">
@@ -94,8 +99,7 @@
                 <input type="password" id="member-pass" autocomplete="current-password" placeholder="Sua Senha"
                     required>
                 <button type="submit" class="btn btn-member">ENTRAR</button>
-                <button type="button" class="btn-text" onclick="showScreen('register-screen')">Criar minha
-                    conta</button>
+                <button type="button" class="btn-text" onclick="showScreen('register-screen')">Criar minha conta</button>
             </form>
         </section>
 
@@ -135,7 +139,8 @@
 
         <!-- LOGIN ADM -->
         <section id="admin-login-screen" class="screen hidden">
-            <header class="app-bar"><button onclick="showScreen('home-screen')">←</button>
+            <header class="app-bar">
+                <button onclick="showScreen('home-screen')">←</button>
                 <h2>Área Restrita ADM</h2>
             </header>
             <form onsubmit="event.preventDefault(); checkAdmin();" class="card" style="margin-top: 20px;">
@@ -148,7 +153,8 @@
         <!-- PAINEL ADM COMPLETO -->
         <section id="admin-dashboard" class="screen hidden">
             <header class="app-bar">
-                <h2>Painel Pastoral</h2><button onclick="location.reload()">Sair</button>
+                <h2>Painel Pastoral</h2>
+                <button onclick="location.reload()">Sair</button>
             </header>
             <div class="tabs">
                 <button id="btn-tab-membros" class="active" onclick="switchTab('membros')">Membros</button>
@@ -193,9 +199,10 @@
         </section>
     </div>
 
+    <!-- Firebase e Inicialização do Banco -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, push, onValue, set, remove, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyC2UX5FRLvbmlv7KJoKuuFMDsB03T7zgK4",
@@ -209,12 +216,9 @@
 
         const app = initializeApp(firebaseConfig);
         window.db = getDatabase(app);
-        window.dbRefs = { ref, push, onValue, set, remove };
-
-        const script = document.createElement('script');
-        script.src = "script.js";
-        document.body.appendChild(script);
+        window.dbRefs = { ref, push, onValue, set, remove, get }; 
     </script>
-</body>
 
+    <script src="script.js"></script>
+</body>
 </html>
